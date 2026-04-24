@@ -1052,8 +1052,8 @@ function pkgConfirm(){
     }
   });
   
-  // Copy draft (chooseables) into poItems (multiplied by quantity)
-  Object.entries(pkgDraft).forEach(([k,v])=>{poItems[k]=v*qty;});
+  // Copy draft (chooseables) into poItems - NO multiplication, draft already has correct totals
+  Object.entries(pkgDraft).forEach(([k,v])=>{poItems[k]=v;});
   
   showToast(poPkg+(qty>1?' (×'+qty+')':'')+' added to pre-order');
   poRSum();poRPackage();
