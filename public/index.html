@@ -1297,7 +1297,8 @@ function makeTbl(tid,date,ex){
   if(b){
     // For combo with future reservation, show reservation time instead of "(combo)"
     const nm=isCM?(futureRes?futureRes.time:'(combo)'):(b.name||'Walk-in');
-    h+=`<div class="tgst" title="${isCM?'Combo - Reserved at '+futureRes.time:nm}">${nm}</div>`;
+    const titleText=isCM?(futureRes?'Combo - Reserved at '+futureRes.time:'Combo table'):nm;
+    h+=`<div class="tgst" title="${titleText}">${nm}</div>`;
     if(!isCM&&b.time){
       const elapsed=elapsedTime(b);
       const end=endTime(b);
