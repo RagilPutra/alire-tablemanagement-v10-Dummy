@@ -108,9 +108,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .tcap{font-size:8px;opacity:.65;line-height:1.2;text-align:center}
 .tgst{font-size:8px;line-height:1.2;text-align:center;width:50px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;margin-top:2px}
 .ttim{font-size:6px;opacity:.75;line-height:1.2;text-align:center;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tbell{font-size:10px;text-align:center;margin-top:2px;animation:bellring 1s infinite}
+.tind-left{color:#4169E1;font-size:8px;margin-right:2px;vertical-align:middle}
+.tind-right{font-size:8px;margin-left:2px;vertical-align:middle;animation:bellring 1s infinite}
 @keyframes bellring{0%,100%{transform:rotate(0deg)}10%,30%{transform:rotate(-10deg)}20%,40%{transform:rotate(10deg)}}
-.tres-dot{width:8px;height:8px;background:#4169E1;border-radius:50%;margin:2px auto 0;box-shadow:0 0 4px rgba(65,105,225,0.5)}
 .av{background:#EAF3DE;border-color:#639922;color:#27500A}
 .rs{background:#E6F1FB;border-color:#378ADD;color:#0C447C}
 .cb{background:#FAEEDA;border-color:#EF9F27;color:#633806}
@@ -1270,7 +1270,22 @@ function makeTbl(tid,date,ex){
   // Check if there's a future reservation on this table (for indicator dot)
   const futureRes=bookings.find(x=>x.date===date&&String(x.tableId)===String(tid)&&x.time>nowS()&&x.type==='reservation');
   
-  let h=`<div class="tnum">${lbl(tid)}</div><div class="tcap">${t.cap}</div>`;
+  // Calculate bell status
+  let showBell=false;
+  if(b&&!isCM&&b.time&&b.duration){
+    const elapsed=elapsedTime(b);
+    if(elapsed){
+      const[eh,em]=elapsed.includes('h')?elapsed.split('h').map(s=>parseInt(s)||0):[0,parseInt(elapsed)];
+      const elapsedMins=eh*60+em;
+      const remaining=b.duration-elapsedMins;
+      if(remaining<=15&&remaining>0)showBell=true;
+    }
+  }
+  
+  // Build header with indicators
+  const blueDot=futureRes&&st==='wk'?`<span class="tind-left">●</span>`:'';
+  const bellIcon=showBell?`<span class="tind-right">🔔</span>`:'';
+  let h=`<div class="tnum">${blueDot}${lbl(tid)}${bellIcon}</div><div class="tcap">${t.cap}</div>`;
   if(b){
     const nm=isCM?'(combo)':(b.name||'Walk-in');
     h+=`<div class="tgst" title="${nm}">${nm}</div>`;
@@ -1279,19 +1294,6 @@ function makeTbl(tid,date,ex){
       const end=endTime(b);
       // Single line time display
       h+=`<div class="ttim">${b.time}${elapsed?' · '+elapsed:''}${end?' → '+end:''}</div>`;
-      // Bell icon if duration ending soon (15 min before)
-      if(b.duration&&elapsed){
-        const[eh,em]=elapsed.includes('h')?elapsed.split('h').map(s=>parseInt(s)||0):[0,parseInt(elapsed)];
-        const elapsedMins=eh*60+em;
-        const remaining=b.duration-elapsedMins;
-        if(remaining<=15&&remaining>0){
-          h+=`<div class="tbell" title="Time ending soon (${remaining}min left)">🔔</div>`;
-        }
-      }
-    }
-    // Future reservation indicator dot
-    if(futureRes&&st==='wk'){
-      h+=`<div class="tres-dot" title="Has reservation at ${futureRes.time}"></div>`;
     }
   }
   el.innerHTML=h;el.onclick=()=>openTI(tid);return el;
@@ -1356,8 +1358,8 @@ async function downloadPOPDF(bid){
   y+=36;
   // Baby chair and booking notes - BEFORE items
   const extras=[];
-  if(b.babyChairs>0)extras.push(`🪑 ${b.babyChairs} Baby Chair${b.babyChairs>1?'s':''}`);
-  if(b.notes)extras.push(`📝 ${b.notes}`);
+  if(b.babyChairs>0)extras.push(`Baby Chair: ${b.babyChairs}`);
+  if(b.notes)extras.push(`Note: ${b.notes}`);
   if(extras.length){
     doc.setFillColor(255,250,240);doc.roundedRect(m,y,W-2*m,6*extras.length+4,2,2,'F');
     doc.setFontSize(9);doc.setTextColor(92,61,30);doc.setFont('helvetica','bold');
