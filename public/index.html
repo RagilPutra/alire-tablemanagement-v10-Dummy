@@ -1316,8 +1316,19 @@ function makeTbl(tid,date,ex){
   
   // Check for future reservations on this table
   const futureReservations=bookings.filter(x=>x.date===date&&allTids(x).includes(String(tid))&&x.time>nowS()&&x.type==='reservation');
-  const futureRegular=futureReservations.find(x=>String(x.tableId)===String(tid)); // Normal reservation
-  const futureCombo=futureReservations.find(x=>String(x.tableId)!==String(tid)); // Combo reservation
+  
+  // Check future reservation types - show dots for ANY future reservation
+  let hasFutureRegular=false;
+  let hasFutureCombo=false;
+  
+  futureReservations.forEach(res=>{
+    const isCombo=(res.combos&&res.combos.length>0);
+    if(isCombo){
+      hasFutureCombo=true;  // Future combo exists
+    }else{
+      hasFutureRegular=true;  // Future regular exists
+    }
+  });
   
   // Calculate bell status
   let showBell=false;
@@ -1336,13 +1347,14 @@ function makeTbl(tid,date,ex){
   }
   
   // Build header with indicators
-  // Blue dot for normal future reservation, yellow dot for combo future reservation
+  // Blue dot = has future REGULAR reservation (non-combo)
+  // Yellow dot = has future COMBO reservation
   // Stack dots vertically
   let dotsHTML='';
-  if(futureRegular||futureCombo){
+  if(hasFutureRegular||hasFutureCombo){
     dotsHTML='<span class="tind-dots">';
-    if(futureRegular)dotsHTML+=`<span style="color:#4169E1">●</span>`;
-    if(futureCombo)dotsHTML+=`<span style="color:#FFA500">●</span>`;
+    if(hasFutureRegular)dotsHTML+=`<span style="color:#4169E1">●</span>`;
+    if(hasFutureCombo)dotsHTML+=`<span style="color:#FFA500">●</span>`;
     dotsHTML+='</span>';
   }
   const bellStyle=bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':'';
@@ -1356,7 +1368,7 @@ function makeTbl(tid,date,ex){
       const elapsed=elapsedTime(b);
       const end=endTime(b);
       // Time display with spaces for wrapping: "start · elapsed - end"
-      h+=`<div class="ttim">${b.time}${elapsed?' · '+elapsed:''}${end?' - '+end:''}</div>`;
+      h+=`<div class="ttim">${b.time}${elapsed?'-'+elapsed:''}${end?'-'+end:''}</div>`;
     }
   }
   el.innerHTML=h;el.onclick=()=>openTI(tid);return el;
@@ -1394,7 +1406,7 @@ function openTI(tid){
         const remaining=b.duration-elapsedMins;
         if(remaining<=15){showBell=true;bellColor=remaining<=0?'red':'';}
       }
-      const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;width:fit-content;max-width:50%;margin-left:auto"><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} · ${elapsed}${end?' - '+end:''}</div>${showBell?`<div style="font-size:14px;margin-left:8px;${bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':''}">🔔</div>`:''}</div>`:'';
+      const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;width:fit-content;max-width:50%;margin-left:auto"><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}${end?' - '+end:''}</div>${showBell?`<div style="font-size:14px;margin-left:8px;${bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':''}">🔔</div>`:''}</div>`:'';
       return`<div class="rcard"${isCM?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes}</div>`:''}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${i.itemNote?`<div class="podit-note">📝 ${i.itemNote}</div>`:''}</div>`).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}<button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>${timerBox}</div>`;
     }).join('');}
   openOv('ov-ti');
