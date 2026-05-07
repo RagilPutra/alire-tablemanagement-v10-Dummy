@@ -1317,16 +1317,18 @@ function makeTbl(tid,date,ex){
   // Check for future reservations on this table
   const futureReservations=bookings.filter(x=>x.date===date&&allTids(x).includes(String(tid))&&x.time>nowS()&&x.type==='reservation');
   
-  // Check future reservation types - show dots for ANY future reservation
+  // Check future reservation types - show dots ONLY for types different from current status
   let hasFutureRegular=false;
   let hasFutureCombo=false;
   
   futureReservations.forEach(res=>{
     const isCombo=(res.combos&&res.combos.length>0);
     if(isCombo){
-      hasFutureCombo=true;  // Future combo exists
+      // Only show yellow dot if current is NOT combo
+      if(st!=='cb')hasFutureCombo=true;
     }else{
-      hasFutureRegular=true;  // Future regular exists
+      // Only show blue dot if current is NOT regular reservation
+      if(st!=='rs')hasFutureRegular=true;
     }
   });
   
@@ -1391,7 +1393,9 @@ function openTI(tid){
   if(!all.length){body.innerHTML=`<div class="no-res">No reservations for ${isToday?'today':fmtSh(viewDate)} at this table</div>`;}
   else{
     body.innerHTML=all.map(b=>{
-      const isCM=String(b.tableId)!==String(tid);const ex=[];
+      const isCM=String(b.tableId)!==String(tid);
+      const isCombo=b.combos&&b.combos.length>0;  // Booking has combo tables
+      const ex=[];
       if(b.babyChairs>0)ex.push(b.babyChairs+' baby chair'+(b.babyChairs>1?'s':''));
       if(b.combos&&b.combos.length)ex.push('Combined: '+[lbl(b.tableId),...b.combos.map(lbl)].join(' + '));
       if(b.duration)ex.push(durLbl(b.duration));
@@ -1407,7 +1411,7 @@ function openTI(tid){
         if(remaining<=15){showBell=true;bellColor=remaining<=0?'red':'';}
       }
       const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;width:fit-content;max-width:50%;margin-left:auto"><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}${end?' - '+end:''}</div>${showBell?`<div style="font-size:14px;margin-left:8px;${bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':''}">🔔</div>`:''}</div>`:'';
-      return`<div class="rcard"${isCM?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes}</div>`:''}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${i.itemNote?`<div class="podit-note">📝 ${i.itemNote}</div>`:''}</div>`).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}<button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>${timerBox}</div>`;
+      return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes}</div>`:''}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${i.itemNote?`<div class="podit-note">📝 ${i.itemNote}</div>`:''}</div>`).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}<button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>${timerBox}</div>`;
     }).join('');}
   openOv('ov-ti');
 }
