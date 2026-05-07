@@ -1320,12 +1320,12 @@ function makeTbl(tid,date,ex){
   // Determine if current booking is ACTIVE (started) or FUTURE (not started yet)
   const currentIsActive=b&&b.type==='reservation'&&timeToMinutes(b.time)<=timeToMinutes(nowS());
   
-  // Show dots ONLY if current booking is ACTIVE (not if it's just a future reservation)
+  // Show dots logic
   let hasFutureRegular=false;
   let hasFutureCombo=false;
   
   if(currentIsActive||st==='av'||st==='wk'){
-    // Current is active reservation, available, or walk-in - show dots for future reservations
+    // Current is active, available, or walk-in - show dots for ALL future reservations
     futureReservations.forEach(res=>{
       const isCombo=(res.combos&&res.combos.length>0);
       if(isCombo){
@@ -1334,8 +1334,20 @@ function makeTbl(tid,date,ex){
         hasFutureRegular=true;
       }
     });
+  }else if(b&&b.type==='reservation'&&!currentIsActive){
+    // Current is a FUTURE reservation (not started yet)
+    // Show dots for reservations AFTER the current one
+    futureReservations.forEach(res=>{
+      if(res.id!==b.id){  // Skip the current future reservation itself
+        const isCombo=(res.combos&&res.combos.length>0);
+        if(isCombo){
+          hasFutureCombo=true;
+        }else{
+          hasFutureRegular=true;
+        }
+      }
+    });
   }
-  // If current is a FUTURE reservation (box shows but not started), don't show dots
   
   // Calculate bell status
   let showBell=false;
