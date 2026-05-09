@@ -102,12 +102,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .gap{flex-shrink:0;width:36px}
 .dvr{width:1.5px;background:var(--bd2);align-self:stretch;margin:0 12px;min-height:70px;flex-shrink:0}
 .t{border-radius:7px;border:2px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 3px;transition:transform .12s;user-select:none;flex-shrink:0}
-.t.sq{width:69px;height:74px}.t.rnd{border-radius:50%;width:67px;height:67px}.t.vip{width:85px;height:74px}
+.t.sq{width:66px;height:70px}.t.rnd{border-radius:50%;width:64px;height:64px}.t.vip{width:81px;height:70px}
 .t:hover{transform:scale(1.06)}
-.tnum{font-size:13px;font-weight:500;line-height:1.2;text-align:center;display:flex;align-items:center;justify-content:center}
+.tnum{font-size:12px;font-weight:500;line-height:1.2;text-align:center;display:flex;align-items:center;justify-content:center}
 .tcap{font-size:9px;opacity:.65;line-height:1.2;text-align:center}
-.tgst{font-size:9px;line-height:1.2;text-align:center;width:58px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;margin-top:2px}
-.ttim{font-size:8px;font-weight:600;opacity:.85;line-height:1.2;text-align:center;margin-top:1px;padding:0 2px;max-width:100%;word-wrap:break-word;overflow-wrap:break-word}
+.tgst{font-size:9px;line-height:1.2;text-align:center;width:56px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;margin-top:2px}
+.ttim{font-size:7px;font-weight:600;opacity:.85;line-height:1.1;text-align:center;margin-top:1px;padding:0 2px;max-width:100%;word-wrap:break-word;overflow-wrap:break-word}
 .tind-dots{display:flex;flex-direction:column;font-size:10px;font-weight:bold;margin-right:3px;line-height:0.8}
 .tind-right{font-size:8px;margin-left:3px;animation:bellring 1s infinite}
 @keyframes bellring{0%,100%{transform:rotate(0deg)}10%,30%{transform:rotate(-10deg)}20%,40%{transform:rotate(10deg)}}
@@ -1386,8 +1386,11 @@ function makeTbl(tid,date,ex){
     if(b.time){
       const elapsed=elapsedTime(b);
       const end=endTime(b);
-      // Show timer only if booking has started (elapsed exists)
-      h+=`<div class="ttim">🕐 ${b.time}${elapsed?'-'+elapsed:''}</div>`;
+      // Two lines: seated time (top), timer with clock (bottom, only if started)
+      h+=`<div class="ttim">${b.time}</div>`;
+      if(elapsed){
+        h+=`<div class="ttim">🕐 ${elapsed}</div>`;
+      }
     }
   }
   el.innerHTML=h;el.onclick=()=>openTI(tid);return el;
@@ -1476,9 +1479,13 @@ async function downloadPOPDF(bid){
       const wrapped=doc.splitTextToSize(txt,W-2*m-8);
       allLines.push(...wrapped);
     });
-    const boxHeight=6+allLines.length*4;
+    const lineHeight=4.5;
+    const boxHeight=6+allLines.length*lineHeight;
     doc.setFillColor(255,250,240);doc.roundedRect(m,y,W-2*m,boxHeight,2,2,'F');
-    doc.text(allLines,m+4,y+5);
+    // Draw each line with proper spacing
+    allLines.forEach((line,i)=>{
+      doc.text(line,m+4,y+5+i*lineHeight);
+    });
     doc.setFont('helvetica','normal');
     y+=boxHeight+4;
   }
@@ -1495,7 +1502,7 @@ async function downloadPOPDF(bid){
   // Items header
   doc.setFillColor(92,61,30);doc.rect(m,y,W-2*m,8,'F');
   doc.setFontSize(10);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');
-  doc.text('ITEM',m+4,y+5.5);doc.text('QTY',m+105,y+5.5);doc.text('NOTE',m+130,y+5.5);
+  doc.text('ITEM',m+4,y+5.5);doc.text('QTY',m+130,y+5.5);doc.text('NOTE',m+150,y+5.5);
   y+=10;
   // Items
   doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(10);
@@ -1505,22 +1512,22 @@ async function downloadPOPDF(bid){
       // Redraw header on new page
       doc.setFillColor(92,61,30);doc.rect(m,y,W-2*m,8,'F');
       doc.setFontSize(10);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');
-      doc.text('ITEM',m+4,y+5.5);doc.text('QTY',m+105,y+5.5);doc.text('NOTE',m+130,y+5.5);
+      doc.text('ITEM',m+4,y+5.5);doc.text('QTY',m+130,y+5.5);doc.text('NOTE',m+150,y+5.5);
       y+=10;doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
     }
     // Calculate row height based on item name wrapping
-    const itemNameLines=doc.splitTextToSize(item.name,95);
+    const itemNameLines=doc.splitTextToSize(item.name,120);
     const rowHeight=Math.max(9,itemNameLines.length*5+4);
     
     if(i%2===0)doc.setFillColor(253,248,242);else doc.setFillColor(255,255,255);
     doc.rect(m,y-4,W-2*m,rowHeight,'F');
     doc.setDrawColor(220,200,180);doc.setLineWidth(0.2);doc.line(m,y+rowHeight-4,W-m,y+rowHeight-4);
     doc.text(itemNameLines,m+4,y+1.5);
-    doc.setFont('helvetica','bold');doc.text(String(item.qty),m+107,y+1.5);doc.setFont('helvetica','normal');
+    doc.setFont('helvetica','bold');doc.text(String(item.qty),m+132,y+1.5);doc.setFont('helvetica','normal');
     if(item.itemNote){
       doc.setTextColor(83,74,183);
-      const noteLines=doc.splitTextToSize(item.itemNote,50);
-      doc.text(noteLines,m+130,y+1.5);
+      const noteLines=doc.splitTextToSize(item.itemNote,30);
+      doc.text(noteLines,m+150,y+1.5);
       doc.setTextColor(30,30,30);
     }
     y+=rowHeight;
