@@ -107,7 +107,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .tnum{font-size:11px;font-weight:500;line-height:1.2;text-align:center;display:flex;align-items:center;justify-content:center}
 .tcap{font-size:8px;opacity:.65;line-height:1.2;text-align:center}
 .tgst{font-size:8px;line-height:1.2;text-align:center;width:50px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;margin-top:2px}
-.ttim{font-size:6px;opacity:.75;line-height:1.3;text-align:center;margin-top:1px;padding:0 2px;max-width:100%;word-wrap:break-word;overflow-wrap:break-word}
+.ttim{font-size:7px;font-weight:600;opacity:.85;line-height:1.2;text-align:center;margin-top:1px;padding:0 2px;max-width:100%;word-wrap:break-word;overflow-wrap:break-word}
 .tind-dots{display:flex;flex-direction:column;font-size:10px;font-weight:bold;margin-right:3px;line-height:0.8}
 .tind-right{font-size:8px;margin-left:3px;animation:bellring 1s infinite}
 @keyframes bellring{0%,100%{transform:rotate(0deg)}10%,30%{transform:rotate(-10deg)}20%,40%{transform:rotate(10deg)}}
@@ -1387,7 +1387,7 @@ function makeTbl(tid,date,ex){
       const elapsed=elapsedTime(b);
       const end=endTime(b);
       // Time display with spaces for wrapping: "start · elapsed - end"
-      h+=`<div class="ttim">${b.time}${elapsed?'-'+elapsed:''}${end?'-'+end:''}</div>`;
+      h+=`<div class="ttim">🕐 ${b.time}-${elapsed}</div>`;
     }
   }
   el.innerHTML=h;el.onclick=()=>openTI(tid);return el;
@@ -1415,7 +1415,7 @@ function openTI(tid){
       const ex=[];
       if(b.babyChairs>0)ex.push(b.babyChairs+' baby chair'+(b.babyChairs>1?'s':''));
       if(b.combos&&b.combos.length)ex.push('Combined: '+[lbl(b.tableId),...b.combos.map(lbl)].join(' + '));
-      if(b.duration)ex.push(durLbl(b.duration));
+      // Duration already shown in first metadata line, don't duplicate
       const hpo=b.preOrder&&b.preOrder.length>0,hn=b.poNote&&b.poNote.length>0;
       // Calculate timer and bell
       const elapsed=elapsedTime(b);
@@ -1427,7 +1427,7 @@ function openTI(tid){
         const remaining=b.duration-elapsedMins;
         if(remaining<=15){showBell=true;bellColor=remaining<=0?'red':'';}
       }
-      const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;width:fit-content;max-width:50%;margin-left:auto"><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}${end?' - '+end:''}</div>${showBell?`<div style="font-size:14px;margin-left:8px;${bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':''}">🔔</div>`:''}</div>`:'';
+      const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;gap:6px;width:fit-content"><div style="font-size:13px">🕐</div><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}</div>${showBell?`<div style="font-size:14px;${bellColor?'filter:brightness(0) saturate(100%) invert(17%) sepia(97%) saturate(7495%) hue-rotate(359deg) brightness(95%) contrast(118%)':''}">🔔</div>`:''}</div>`:'';
       return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes}</div>`:''}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${i.itemNote?`<div class="podit-note">📝 ${i.itemNote}</div>`:''}</div>`).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}<button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>${timerBox}</div>`;
     }).join('');}
   openOv('ov-ti');
@@ -1478,11 +1478,13 @@ async function downloadPOPDF(bid){
   }
   // PO General note - BEFORE items
   if(b.poNote){
-    doc.setFillColor(238,237,254);doc.roundedRect(m,y,W-2*m,14,2,2,'F');
     doc.setFontSize(9);doc.setTextColor(83,74,183);doc.setFont('helvetica','bold');
+    const noteLines=doc.splitTextToSize(b.poNote,W-2*m-8);
+    const noteHeight=6+noteLines.length*4;
+    doc.setFillColor(238,237,254);doc.roundedRect(m,y,W-2*m,noteHeight,2,2,'F');
     doc.text('GENERAL NOTE:',m+4,y+5);doc.setFont('helvetica','normal');
-    doc.text(b.poNote.substring(0,80),m+4,y+11);
-    y+=18;
+    doc.text(noteLines,m+4,y+11);
+    y+=noteHeight+4;
   }
   // Items header
   doc.setFillColor(92,61,30);doc.rect(m,y,W-2*m,8,'F');
