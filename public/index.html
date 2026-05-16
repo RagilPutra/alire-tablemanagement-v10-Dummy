@@ -1389,9 +1389,9 @@ function makeTbl(tid,date,ex){
       const end=endTime(b);
       
       if(isRound){
-        // Round tables: name + time on same line with separator
-        const shortName=nm.length>6?nm.substring(0,6)+'..':nm;
-        h+=`<div style="font-size:7px;font-weight:600;opacity:.85;line-height:1.2;text-align:center;margin-top:1px;padding:0 2px">${shortName} • ${b.time}</div>`;
+        // Round tables: name + time on same line with separator, shorter name
+        const shortName=nm.length>4?nm.substring(0,4)+'..':nm;
+        h+=`<div style="font-size:7px;font-weight:600;opacity:.85;line-height:1.2;text-align:center;margin-top:1px;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${shortName} • ${b.time}</div>`;
         if(elapsed){
           h+=`<div class="ttim">🕐 ${elapsed}</div>`;
         }
