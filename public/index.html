@@ -1311,7 +1311,12 @@ function makeTbl(tid,date,ex){
   const b=nearestB(tid,date);const isCM=b&&String(b.tableId)!==String(tid);
   const st=fStatus(tid,date);const hasPO=b&&b.preOrder&&b.preOrder.length>0&&String(b.tableId)===String(tid);
   const el=document.createElement('div');
-  el.className=[(ex?'ext':'t'),t.rnd?'rnd':t.vip?'vip':'sq',st].join(' ');
+  el.className=[(ex?'ext':'t'),t.shape==='rnd'?'rnd':t.vip?'vip':'sq',st].join(' ');
+  // Fix for round tables: prevent vertical centering to avoid text overlap
+  if(t.shape==='rnd'&&b&&b.time){
+    el.style.justifyContent='flex-start';
+    el.style.paddingTop='6px';
+  }
   if(hasPO)el.style.borderColor='#1a1a1a';
   
   // Check for future reservations on this table
