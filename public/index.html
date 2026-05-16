@@ -1391,9 +1391,10 @@ function makeTbl(tid,date,ex){
       const end=endTime(b);
       
       if(isRound){
-        // Round tables: vertical stack format (Name - Time on one line, duration below)
-        const shortName=nm.length>5?nm.substring(0,5)+'..':nm;
-        h+=`<div style="font-size:7px;font-weight:600;line-height:1.1;text-align:center;margin-top:1px;white-space:nowrap">${shortName} - ${b.time}</div>`;
+        // Round tables: name and time on SEPARATE lines (stacked vertically)
+        const shortName=nm.length>6?nm.substring(0,6)+'..':nm;
+        h+=`<div style="font-size:7px;font-weight:600;line-height:1.1;text-align:center;margin-top:2px">${shortName}</div>`;
+        h+=`<div style="font-size:7px;font-weight:600;line-height:1.1;text-align:center;margin-top:1px">${b.time}</div>`;
         if(elapsed){
           h+=`<div class="ttim">${elapsed}</div>`;
         }
