@@ -1378,7 +1378,9 @@ function makeTbl(tid,date,ex){
   }
   const bellSrc=bellColor==='red'?'bell-red.png':bellColor==='yellow'?'bell-yellow.png':'';
   const bellIcon=showBell?`<img src="${bellSrc}" class="tind-right" style="width:10px;height:10px;vertical-align:middle">`:'';
+  
   let h=`<div class="tnum">${dotsHTML}${lbl(tid)}${bellIcon}</div><div class="tcap">${t.cap}</div>`;
+  
   if(b){
     const nm=b.name||'Walk-in';
     const titleText=isCM?'Combo - Reserved at '+b.time:nm;
@@ -1389,11 +1391,11 @@ function makeTbl(tid,date,ex){
       const end=endTime(b);
       
       if(isRound){
-        // Round tables: name + time on same line with separator, shorter name
-        const shortName=nm.length>4?nm.substring(0,4)+'..':nm;
-        h+=`<div style="font-size:7px;font-weight:600;opacity:.85;line-height:1.2;text-align:center;margin-top:1px;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${shortName} • ${b.time}</div>`;
+        // Round tables: vertical stack format (Name - Time on one line, duration below)
+        const shortName=nm.length>5?nm.substring(0,5)+'..':nm;
+        h+=`<div style="font-size:7px;font-weight:600;line-height:1.1;text-align:center;margin-top:1px">${shortName} - ${b.time}</div>`;
         if(elapsed){
-          h+=`<div class="ttim">🕐 ${elapsed}</div>`;
+          h+=`<div class="ttim">${elapsed}</div>`;
         }
       }else{
         // Square/VIP tables: name on separate line
