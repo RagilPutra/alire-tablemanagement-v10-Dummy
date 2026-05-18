@@ -1616,7 +1616,7 @@ async function downloadDailyPDF(){
       // Table header
       doc.setFillColor(250,246,240);doc.rect(m,y,W-2*m,6,'F');
       doc.setFontSize(8);doc.setTextColor(120,90,60);doc.setFont('helvetica','bold');
-      doc.text('TIME',m+2,y+4.5);doc.text('TABLE',m+22,y+4.5);doc.text('GUEST',m+42,y+4.5);doc.text('PAX',m+95,y+4.5);doc.text('DUR',m+108,y+4.5);doc.text('NOTES',m+125,y+4.5);doc.text('FLAGS',m+150,y+4.5);
+      doc.text('TIME',m+2,y+4.5);doc.text('TABLE',m+22,y+4.5);doc.text('GUEST',m+42,y+4.5);doc.text('PAX',m+95,y+4.5);doc.text('DUR',m+108,y+4.5);doc.text('FLAGS',m+125,y+4.5);
       y+=7;
       // Rows
       doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
@@ -1637,13 +1637,12 @@ async function downloadDailyPDF(){
         doc.text(String(b.pax||'-'),m+95,y+4.5);
         doc.text(b.duration?durLbl(b.duration):'-',m+108,y+4.5);
         // NOTES column - removed duplicate, keep empty
-        doc.text('',m+125,y+4.5);
         // Flags - aligned under FLAGS column
         const flags=[];
         if(b.preOrder&&b.preOrder.length)flags.push('PO');
         if(b.combos&&b.combos.length)flags.push('COMBO');
         if(flags.length){
-          let fx=m+150; // Align with FLAGS header
+          let fx=m+125; // Align with FLAGS header (moved left since NOTES removed)
           flags.forEach(f=>{
             if(f==='PO'){doc.setFillColor(83,74,183);doc.setTextColor(255,255,255);}else{doc.setFillColor(201,100,0);doc.setTextColor(255,255,255);}
             doc.roundedRect(fx,y+1,10,5,1,1,'F');doc.setFontSize(6);doc.text(f,fx+5,y+4.2,{align:'center'});fx+=12;
@@ -1692,8 +1691,8 @@ async function downloadDailyPDF(){
           
           // PO general note FIRST (if exists)
           if(b.poNote){
-            const noteLines=doc.splitTextToSize(`  📝 ${b.poNote}`,W-2*m-12);
-            const noteHeight=noteLines.length*5;
+            const noteLines=doc.splitTextToSize(b.poNote,W-2*m-12);
+            const noteHeight=noteLines.length*5 + 2;
             if(y+noteHeight>270){doc.addPage();y=m;}
             doc.setFillColor(238,237,254);doc.rect(m+2,y,W-2*m-4,noteHeight,'F');
             doc.setFont('helvetica','normal');
@@ -1701,6 +1700,8 @@ async function downloadDailyPDF(){
               doc.text(line,m+6,y+4+(li*5));
             });
             y+=noteHeight;
+            // Add spacing between PO note and items
+            y+=3;
           }
           
           // Then items list
@@ -1719,6 +1720,8 @@ async function downloadDailyPDF(){
             });
             y+=itemHeight;
           });
+          // Add spacing after last item
+          y+=3;
           doc.setTextColor(30,30,30);
         }
       });
