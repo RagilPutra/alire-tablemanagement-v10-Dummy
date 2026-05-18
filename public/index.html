@@ -1636,8 +1636,8 @@ async function downloadDailyPDF(){
         doc.text(guestText+phoneText,m+42,y+4.5);
         doc.text(String(b.pax||'-'),m+95,y+4.5);
         doc.text(b.duration?durLbl(b.duration):'-',m+108,y+4.5);
-        const noteStr=[b.notes||'',b.babyChairs>0?b.babyChairs+'x baby chair':''].filter(Boolean).join(', ');
-        doc.text(noteStr.substring(0,28)+(noteStr.length>28?'...':''),m+125,y+4.5);
+        // NOTES column - removed duplicate, keep empty
+        doc.text('',m+125,y+4.5);
         // Flags - aligned under FLAGS column
         const flags=[];
         if(b.preOrder&&b.preOrder.length)flags.push('PO');
@@ -1660,18 +1660,51 @@ async function downloadDailyPDF(){
           doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(8);
           y+=6;
         }
-        // Full notes sub-row (show everything, no truncation)
-        if(b.notes&&b.notes.length>28){
+        // General Notes sub-row (booking notes + baby chairs with heading)
+        const generalNotes = [];
+        if(b.notes) generalNotes.push(b.notes);
+        if(b.babyChairs>0) generalNotes.push(`${b.babyChairs}x Baby Chair`);
+        
+        if(generalNotes.length){
           if(y>270){doc.addPage();y=m;}
-          const noteLines=doc.splitTextToSize('Notes: '+b.notes,W-2*m-8);
-          doc.setFillColor(248,248,248);doc.rect(m+2,y,W-2*m-4,6*noteLines.length,'F');
-          doc.setFontSize(7);doc.setTextColor(80,80,80);
-          noteLines.forEach(ln=>{doc.text(ln,m+6,y+4);y+=5;});
-          y+=1;doc.setTextColor(30,30,30);doc.setFontSize(8);
+          const fullNoteText = generalNotes.join(' • ');
+          const noteLines=doc.splitTextToSize(fullNoteText,W-2*m-12);
+          const boxHeight = 6 + (noteLines.length * 5);
+          doc.setFillColor(255,250,240);doc.rect(m+2,y,W-2*m-4,boxHeight,'F');
+          // Heading
+          doc.setFontSize(7);doc.setTextColor(92,61,30);doc.setFont('helvetica','bold');
+          doc.text('GENERAL NOTES:',m+6,y+4);
+          // Notes
+          doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+          noteLines.forEach((ln,idx)=>{doc.text(ln,m+6,y+9+(idx*5));});
+          y+=boxHeight;
+          doc.setTextColor(30,30,30);doc.setFontSize(8);
         }
-        // PO items sub-row - with per-item page break checking and text wrapping
+        
+        // Pre-Order Notes sub-row - with heading, PO note first, then items
         if(b.preOrder&&b.preOrder.length){
-          doc.setFontSize(7);doc.setTextColor(83,74,183);
+          if(y>270){doc.addPage();y=m;}
+          // Pre-Order heading
+          doc.setFillColor(238,237,254);doc.rect(m+2,y,W-2*m-4,6,'F');
+          doc.setFontSize(7);doc.setTextColor(83,74,183);doc.setFont('helvetica','bold');
+          doc.text('PRE-ORDER NOTES:',m+6,y+4);
+          y+=6;
+          
+          // PO general note FIRST (if exists)
+          if(b.poNote){
+            const noteLines=doc.splitTextToSize(`  📝 ${b.poNote}`,W-2*m-12);
+            const noteHeight=noteLines.length*5;
+            if(y+noteHeight>270){doc.addPage();y=m;}
+            doc.setFillColor(238,237,254);doc.rect(m+2,y,W-2*m-4,noteHeight,'F');
+            doc.setFont('helvetica','normal');
+            noteLines.forEach((line,li)=>{
+              doc.text(line,m+6,y+4+(li*5));
+            });
+            y+=noteHeight;
+          }
+          
+          // Then items list
+          doc.setFont('helvetica','normal');
           b.preOrder.forEach((item,idx)=>{
             const itemText=`  • ${item.name} ×${item.qty}${item.itemNote?' — '+item.itemNote:''}`;
             const lines=doc.splitTextToSize(itemText,W-2*m-12);
@@ -1686,17 +1719,6 @@ async function downloadDailyPDF(){
             });
             y+=itemHeight;
           });
-          // PO note
-          if(b.poNote){
-            const noteLines=doc.splitTextToSize(`  📝 ${b.poNote}`,W-2*m-12);
-            const noteHeight=noteLines.length*5;
-            if(y+noteHeight>270){doc.addPage();y=m;}
-            doc.setFillColor(238,237,254);doc.rect(m+2,y,W-2*m-4,noteHeight,'F');
-            noteLines.forEach((line,li)=>{
-              doc.text(line,m+6,y+4+(li*5));
-            });
-            y+=noteHeight;
-          }
           doc.setTextColor(30,30,30);
         }
       });
