@@ -1490,38 +1490,59 @@ async function downloadPOPDF(bid){
   doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);doc.text('Time:',m+4,infoY2);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(b.time+(b.duration?' ('+durLbl(b.duration)+')':''),m+22,infoY2);
   doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);doc.text('Pax:',m+80,infoY2);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(String(b.pax||'-'),m+96,infoY2);
   y+=36;
-  // Baby chair and booking notes - BEFORE items
-  const extras=[];
-  if(b.babyChairs>0)extras.push(`Baby Chair: ${b.babyChairs}`);
-  if(b.notes)extras.push(`Note: ${b.notes}`);
-  if(extras.length){
+  // GENERAL NOTES section - Baby chair and booking notes with heading
+  const generalNotes = [];
+  if(b.babyChairs>0)generalNotes.push(`Baby Chair: ${b.babyChairs}`);
+  if(b.notes)generalNotes.push(b.notes);
+  
+  if(generalNotes.length){
     doc.setFontSize(9);doc.setTextColor(92,61,30);doc.setFont('helvetica','bold');
-    // Calculate total height needed for all wrapped lines
+    // Calculate total height needed
     let allLines=[];
-    extras.forEach(txt=>{
+    generalNotes.forEach(txt=>{
       const wrapped=doc.splitTextToSize(txt,W-2*m-8);
       allLines.push(...wrapped);
     });
     const lineHeight=6;
-    const boxHeight=10+allLines.length*lineHeight;
+    const boxHeight=12+allLines.length*lineHeight;
     doc.setFillColor(255,250,240);doc.roundedRect(m,y,W-2*m,boxHeight,2,2,'F');
-    // Draw each line with proper spacing
-    allLines.forEach((line,i)=>{
-      doc.text(line,m+4,y+7+i*lineHeight);
-    });
+    // Heading
+    doc.text('GENERAL NOTES:',m+4,y+7);
+    // Notes
     doc.setFont('helvetica','normal');
+    allLines.forEach((line,i)=>{
+      doc.text(line,m+4,y+13+i*lineHeight);
+    });
     y+=boxHeight+4;
   }
-  // PO General note - BEFORE items
-  if(b.poNote){
+  
+  // PRE-ORDER NOTES section - PO general note and items with heading
+  if(b.preOrder&&b.preOrder.length){
     doc.setFontSize(9);doc.setTextColor(83,74,183);doc.setFont('helvetica','bold');
-    const noteLines=doc.splitTextToSize(b.poNote,W-2*m-8);
-    const noteHeight=6+noteLines.length*4;
-    doc.setFillColor(238,237,254);doc.roundedRect(m,y,W-2*m,noteHeight,2,2,'F');
-    doc.text('GENERAL NOTE:',m+4,y+5);doc.setFont('helvetica','normal');
-    doc.text(noteLines,m+4,y+11);
-    y+=noteHeight+4;
+    doc.setFillColor(238,237,254);
+    
+    // Calculate height for heading + PO note
+    let headerHeight = 10;
+    let poNoteLines = [];
+    if(b.poNote){
+      poNoteLines = doc.splitTextToSize(b.poNote,W-2*m-8);
+      headerHeight += poNoteLines.length*5 + 4;
+    }
+    
+    // Draw header box with PO note
+    doc.roundedRect(m,y,W-2*m,headerHeight,2,2,'F');
+    doc.text('PRE-ORDER NOTES:',m+4,y+7);
+    
+    // PO general note (if exists)
+    if(b.poNote){
+      doc.setFont('helvetica','normal');
+      poNoteLines.forEach((line,i)=>{
+        doc.text(line,m+4,y+13+i*5);
+      });
+    }
+    y+=headerHeight+2;
   }
+  
   // Items header
   doc.setFillColor(92,61,30);doc.rect(m,y,W-2*m,8,'F');
   doc.setFontSize(10);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');
