@@ -70,39 +70,50 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 /* ANALYTICS */
 .analytics-panel{flex:1;padding:16px;overflow-y:auto}
 .analytics-panel.hidden{display:none}
-.analytics-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2)}
-.analytics-header h2{font-size:18px;font-weight:600}
 .time-selector{display:flex;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px;gap:2px}
-.time-btn{font-size:12px;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:500;color:var(--tx2);border:none;background:none}
-.time-btn.active{background:var(--bg);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
-.sum-card{background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--bd2)}
-.sum-value{font-size:22px;font-weight:600;line-height:1;margin-bottom:4px}
-.sum-label{font-size:10px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em}
-.sum-sub{font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.4}
-.chart-section{background:var(--bg);border:1px solid var(--bd2);border-radius:10px;padding:16px;margin-bottom:16px}
-.chart-title{font-size:12px;font-weight:600;margin-bottom:12px;color:var(--tx2);text-transform:uppercase;letter-spacing:0.05em}
-.chart-container{position:relative;height:240px}
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.heat-cell{width:56px;height:56px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;border:2px solid transparent}
-.heat-cell:hover{transform:scale(1.08);border-color:var(--tx)}
-.heat-label{font-size:10px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
-.heat-count{font-size:8px;color:#1a1a1a;opacity:0.8}
-.heat-0{background:linear-gradient(135deg,#FFFFFF 0%,#F5F5F5 100%);border:1px solid #E0E0E0!important}
-.heat-1{background:linear-gradient(135deg,#A8E6A3 0%,#88D982 100%)}
-.heat-2{background:linear-gradient(135deg,#FFE082 0%,#FFD54F 100%)}
-.heat-3{background:linear-gradient(135deg,#FFAB91 0%,#FF8A65 100%)}
-.heat-legend{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;flex-wrap:wrap;font-size:11px}
-.legend-item{display:flex;align-items:center;gap:6px}
-.legend-color{width:20px;height:14px;border-radius:3px}
-.repeat-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
-.repeat-table th{text-align:left;font-size:10px;color:var(--tx2);font-weight:600;padding:8px;border-bottom:1px solid var(--bd2);text-transform:uppercase;letter-spacing:0.05em;background:var(--bg2)}
-.repeat-table td{padding:10px 8px;border-bottom:1px solid var(--bd2)}
-.repeat-table tr:hover{background:var(--bg2)}
-.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.time-btn{font-size:13px;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:500;color:var(--tx2);border:none;background:none}
+.time-btn.active{background:var(--bg);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.time-btn:hover:not(.active){background:rgba(0,0,0,.05)}
+.custom-range{display:none;align-items:center;gap:8px;margin-bottom:16px;padding:12px;background:var(--bg2);border-radius:8px}
+.custom-range.show{display:flex}
+.custom-range label{font-size:12px;color:var(--tx2);font-weight:500}
+.custom-range input[type=date]{font-size:13px;padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);outline:none;font-family:var(--font)}
+.btn-apply{font-size:12px;padding:6px 12px;border-radius:8px;border:none;background:var(--brand);color:#fff;cursor:pointer;font-weight:500}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.sum-card{background:var(--bg2);border-radius:10px;padding:16px}
+.sum-value{font-size:26px;font-weight:600;line-height:1;margin-bottom:4px}
+.sum-label{font-size:11px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.sum-sub{font-size:11px;color:var(--tx3);margin-top:4px;line-height:1.5}
+.chart-section{background:var(--bg);border:0.5px solid var(--bd3);border-radius:12px;padding:20px;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:16px;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em}
+.chart-container{position:relative;height:260px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.heatmap-container{padding:16px;background:var(--bg2);border-radius:10px;margin-top:12px}
+.heatmap-zone{margin-bottom:20px}
+.heatmap-zone:last-child{margin-bottom:0}
+.zone-title{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.heat-row{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.heat-cell{width:58px;height:60px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;border:2px solid transparent}
+.heat-cell.rnd{border-radius:16px}
+.heat-cell:hover{transform:scale(1.08);border-color:rgba(0,0,0,.3);z-index:10}
+.heat-label{font-size:11px;font-weight:600;color:#1a1a1a;margin-bottom:1px}
+.heat-count{font-size:8px;opacity:.75;color:#1a1a1a}
+.heat-0{background:linear-gradient(135deg,#FFFFFF,#F5F5F5);border:1px solid #E0E0E0!important}
+.heat-1{background:linear-gradient(135deg,#A8E6A3,#88D982)}
+.heat-2{background:linear-gradient(135deg,#FFE082,#FFD54F)}
+.heat-3{background:linear-gradient(135deg,#FFAB91,#FF8A65)}
+.heat-legend{display:flex;align-items:center;gap:14px;margin-top:14px;padding:10px 14px;background:var(--bg);border-radius:8px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2)}
+.legend-color{width:22px;height:14px;border-radius:3px}
+.repeat-table{width:100%;border-collapse:collapse;margin-top:12px}
+.repeat-table th{text-align:left;font-size:11px;color:var(--tx2);font-weight:600;padding:8px;border-bottom:1px solid var(--bd3);text-transform:uppercase;letter-spacing:.05em}
+.repeat-table td{padding:10px 8px;border-bottom:1px solid var(--bd3);font-size:13px}
+.repeat-table tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
 .badge-high{background:#dcfce7;color:#166534}
 .badge-med{background:#fef3c7;color:#854d0e}
 .badge-low{background:#f3f4f6;color:#374151}
+.empty-state{text-align:center;padding:40px;color:var(--tx3);font-size:13px}
 
 .dbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .dbar-lbl{font-size:12px;color:var(--tx2);font-weight:500}
@@ -560,34 +571,102 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
   <!-- ANALYTICS VIEW -->
   <div id="vanalytics" class="analytics-panel">
-    <div class="analytics-header">
-      <h2>📊 Analytics</h2>
-      <button class="btn btn-outline" onclick="downloadAnalyticsPDF()">📄 Export PDF</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
+      <div style="font-size:18px;font-weight:600">📊 Analytics</div>
+      <button class="btn-export" onclick="exportPDF()">📄 Export PDF</button>
     </div>
 
     <div class="time-selector">
       <button class="time-btn active" onclick="selectTime(this,'today')">Today</button>
       <button class="time-btn" onclick="selectTime(this,'7days')">Last 7 Days</button>
       <button class="time-btn" onclick="selectTime(this,'30days')">Last 30 Days</button>
+      <button class="time-btn" onclick="selectTime(this,'custom')">Custom Range</button>
+    </div>
+
+    <div class="custom-range" id="customRange">
+      <label>From:</label><input type="date" id="dateFrom">
+      <label>To:</label><input type="date" id="dateTo">
+      <button class="btn-apply" onclick="applyCustomRange()">Apply</button>
     </div>
 
     <div class="summary-grid">
-      <div class="sum-card"><div class="sum-value" id="totalBookings">24</div><div class="sum-label">Total Bookings</div><div class="sum-sub" id="bookingsBreakdown">18 reservations (75%)<br>6 walk-ins (25%)</div></div>
-      <div class="sum-card"><div class="sum-value" id="totalPax">68</div><div class="sum-label">Total Pax</div><div class="sum-sub" id="paxBreakdown">52 reservations (76%)<br>16 walk-ins (24%)</div></div>
-      <div class="sum-card"><div class="sum-value" id="avgDuration">2h 18m</div><div class="sum-label">Avg Duration</div><div class="sum-sub" id="durationBreakdown">Res: 2h 25m<br>Walk: 1h 58m</div></div>
-      <div class="sum-card"><div class="sum-value" id="preOrders">8</div><div class="sum-label">Pre-Orders</div><div class="sum-sub" id="preOrdersPercent">33% of reservations</div></div>
+      <div class="sum-card"><div class="sum-value" id="s-total">0</div><div class="sum-label">Total Bookings</div><div class="sum-sub" id="s-total-sub">—</div></div>
+      <div class="sum-card"><div class="sum-value" id="s-pax">0</div><div class="sum-label">Total Pax</div><div class="sum-sub" id="s-pax-sub">—</div></div>
+      <div class="sum-card"><div class="sum-value" id="s-dur">—</div><div class="sum-label">Avg Duration</div><div class="sum-sub" id="s-dur-sub">—</div></div>
+      <div class="sum-card"><div class="sum-value" id="s-po">0</div><div class="sum-label">Pre-Orders</div><div class="sum-sub" id="s-po-sub">—</div></div>
+      <div class="sum-card"><div class="sum-value" id="s-top" style="font-size:16px;line-height:1.3">—</div><div class="sum-label">Top 3 Tables</div><div class="sum-sub" id="s-top-sub">—</div></div>
+    </div>
+
+    <div class="chart-section"><div class="chart-title">Bookings Over Time</div><div class="chart-container"><canvas id="chartOverTime"></canvas></div></div>
+
+    <div class="chart-section">
+      <div class="chart-title">Table Utilization Heat Map</div>
+      <div class="heatmap-container">
+        <div class="heatmap-zone">
+          <div class="zone-title">VIP Room</div>
+          <div style="display:flex;gap:40px;flex-wrap:wrap">
+            <div class="heat-row" id="hm-vip-left"></div>
+            <div class="heat-row" id="hm-vip-right"></div>
+          </div>
+        </div>
+        <div class="heatmap-zone">
+          <div class="zone-title">Semi-Outdoor (Smoking)</div>
+          <div style="display:flex;gap:40px;flex-wrap:wrap">
+            <div><div class="heat-row" id="hm-semi-r1-left"></div><div class="heat-row" id="hm-semi-r2-left" style="margin-top:7px"></div></div>
+            <div><div class="heat-row" id="hm-semi-r1-right"></div><div class="heat-row" id="hm-semi-r2-right" style="margin-top:7px"></div></div>
+          </div>
+        </div>
+        <div class="heatmap-zone">
+          <div class="zone-title">Indoor</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:7px">
+            <div class="heat-row" id="hm-in-r1a"></div>
+            <div class="heat-row" id="hm-in-r1b"></div>
+            <div class="heat-row" id="hm-in-r1c"></div>
+          </div>
+          <div style="display:flex;gap:40px;flex-wrap:wrap">
+            <div class="heat-row" id="hm-in-r2a"></div>
+            <div class="heat-row" id="hm-in-r2b"></div>
+          </div>
+        </div>
+      </div>
+      <div class="heat-legend">
+        <strong style="font-size:11px;margin-right:4px">Bookings per table:</strong>
+        <div class="legend-item"><div class="legend-color" style="background:linear-gradient(135deg,#FFFFFF,#F5F5F5);border:1px solid #E0E0E0"></div><span id="hl-0">0</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:linear-gradient(135deg,#A8E6A3,#88D982)"></div><span id="hl-1">1</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:linear-gradient(135deg,#FFE082,#FFD54F)"></div><span id="hl-2">2</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:linear-gradient(135deg,#FFAB91,#FF8A65)"></div><span id="hl-3">3+</span></div>
+        <span style="font-size:10px;color:var(--tx3);margin-left:8px" id="hl-note">(Scale adjusts based on selected time range)</span>
+      </div>
     </div>
 
     <div class="chart-row">
-      <div class="chart-section"><div class="chart-title">Bookings Over Time</div><div class="chart-container"><canvas id="reservationsChart"></canvas></div></div>
-      <div class="chart-section"><div class="chart-title">Peak Hours</div><div class="chart-container"><canvas id="peakHoursChart"></canvas></div></div>
+      <div class="chart-section"><div class="chart-title">Peak Hours</div><div class="chart-container"><canvas id="chartPeak"></canvas></div></div>
+      <div class="chart-section"><div class="chart-title">Party Size Distribution</div><div class="chart-container"><canvas id="chartParty"></canvas></div></div>
     </div>
 
-    <div class="chart-section"><div class="chart-title">Party Size Distribution</div><div class="chart-container"><canvas id="partySizeChart"></canvas></div></div>
-
     <div class="chart-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="chart-title" style="margin:0">Repeat Customers</div><div class="time-selector"><button class="time-btn active" onclick="selectRepeatTime(this,'30days')">30 Days</button><button class="time-btn" onclick="selectRepeatTime(this,'1year')">1 Year</button></div></div>
-      <table class="repeat-table"><thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Frequency</th></tr></thead><tbody id="repeatCustomersBody"><tr><td>Budi Santoso</td><td>+62 812-345-6789</td><td>5</td><td><span class="badge badge-high">High</span></td></tr></tbody></table>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div class="chart-title" style="margin:0">Repeat Customers</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="time-selector" style="margin:0">
+            <button class="time-btn active" onclick="selectRepeatTime(this,'30days')">Last 30 Days</button>
+            <button class="time-btn" onclick="selectRepeatTime(this,'1year')">Last 1 Year</button>
+          </div>
+          <button class="btn-export" onclick="exportRepeatExcel()">⬇ Excel</button>
+        </div>
+      </div>
+      <table class="repeat-table">
+        <thead><tr><th>Name</th><th>Phone</th><th>Total Visits</th><th>Last Visit</th><th>Avg Party Size</th><th>Frequency</th></tr></thead>
+        <tbody id="repeat-tbody"><tr><td colspan="6" class="empty-state">No repeat customers in this period</td></tr></tbody>
+      </table>
+      <div class="heat-legend" style="margin-top:12px">
+        <strong style="font-size:11px;margin-right:4px">Frequency:</strong>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div class="legend-item"><span class="badge badge-high">High</span><span style="margin-left:4px" id="freq-high-label">5+ visits</span></div>
+          <div class="legend-item"><span class="badge badge-med">Medium</span><span style="margin-left:4px" id="freq-med-label">3–4 visits</span></div>
+          <div class="legend-item"><span class="badge badge-low">Low</span><span style="margin-left:4px" id="freq-low-label">2 visits</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1310,7 +1389,7 @@ function poGet(){
 }
 
 /* ── VIEW SWITCH ── */
-function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');if(v==='list')renderList();if(v==='analytics')loadAnalytics('today');}
+function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');if(v==='list')renderList();if(v==='analytics')loadAnalytics();}
 function onFDateChange(){const val=document.getElementById('fdate').value;const it=val===today();fdate=it?'':val;const ch=document.getElementById('fchip');ch.textContent=it?'Today':'Viewing '+fmtSh(val);ch.className='vchip '+(it?'chip-live':'chip-prev');renderFloor();}
 function setFToday(){fdate='';document.getElementById('fdate').value=today();const ch=document.getElementById('fchip');ch.textContent='Today';ch.className='vchip chip-live';renderFloor();}
 function openExpand(){const d=afd();const it=d===today();document.getElementById('exlbl').textContent=it?'Today — '+fmtSh(d):fmtFull(d);renderExFloor();document.getElementById('exov').classList.remove('hidden');}
@@ -2212,7 +2291,130 @@ function scrollToTop() {
 // Boot — check session first
 checkSession();
 // ═══ ANALYTICS ═══
-const analyticsData={today:{totalBookings:24,reservations:18,walkins:6,totalPax:68,resPax:52,walkinPax:16,avgDuration:'2h 18m',resDuration:'2h 25m',walkinDuration:'1h 58m',preOrders:8},'7days':{totalBookings:156,reservations:124,walkins:32,totalPax:438,resPax:356,walkinPax:82,avgDuration:'2h 15m',resDuration:'2h 22m',walkinDuration:'1h 55m',preOrders:48},'30days':{totalBookings:682,reservations:548,walkins:134,totalPax:1924,resPax:1586,walkinPax:338,avgDuration:'2h 12m',resDuration:'2h 20m',walkinDuration:'1h 52m',preOrders:215}};let chartInstances={};function initCharts(){const co={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,font:{size:11,family:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'},color:'#d1d5db',usePointStyle:false}}}};const rc=document.getElementById('reservationsChart');if(rc){chartInstances.reservations=new Chart(rc,{type:'line',data:{labels:['11:00','12:00','13:00','17:00','18:00','19:00','20:00'],datasets:[{label:'Reservations',data:[3,5,8,4,6,9,7],borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:3},{label:'Walk-ins',data:[1,2,3,2,3,4,3],borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:3}]},options:co});}const pc=document.getElementById('peakHoursChart');if(pc){chartInstances.peak=new Chart(pc,{type:'bar',data:{labels:['11:00','12:00','13:00','17:00','18:00','19:00','20:00'],datasets:[{label:'Reservations',data:[2,4,6,4,6,5,3],backgroundColor:'#60391C'},{label:'Walk-ins',data:[1,1,2,2,3,2,1],backgroundColor:'#C5A25D'}]},options:{...co,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}const psc=document.getElementById('partySizeChart');if(psc){chartInstances.partySize=new Chart(psc,{type:'doughnut',data:{labels:['2 pax','3-4 pax','5-6 pax','7+ pax'],datasets:[{data:[35,40,20,5],backgroundColor:['#60391C','#C5A25D','#FFB946','#8B6914']}]},options:{...co,plugins:{...co.plugins,legend:{...co.plugins.legend,position:'bottom'}}}});}}function updateSummaryCards(d){document.getElementById('totalBookings').textContent=d.totalBookings;document.getElementById('bookingsBreakdown').innerHTML=d.reservations+' reservations ('+Math.round(d.reservations/d.totalBookings*100)+'%)<br>'+d.walkins+' walk-ins ('+Math.round(d.walkins/d.totalBookings*100)+'%)';document.getElementById('totalPax').textContent=d.totalPax;document.getElementById('paxBreakdown').innerHTML=d.resPax+' reservations ('+Math.round(d.resPax/d.totalPax*100)+'%)<br>'+d.walkinPax+' walk-ins ('+Math.round(d.walkinPax/d.totalPax*100)+'%)';document.getElementById('avgDuration').textContent=d.avgDuration;document.getElementById('durationBreakdown').innerHTML='Res: '+d.resDuration+'<br>Walk: '+d.walkinDuration;document.getElementById('preOrders').textContent=d.preOrders;document.getElementById('preOrdersPercent').textContent=Math.round(d.preOrders/d.reservations*100)+'% of reservations';}function selectTime(b,t){document.querySelectorAll('.time-selector .time-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');updateSummaryCards(analyticsData[t]||analyticsData.today);}function selectRepeatTime(b,t){b.parentElement.querySelectorAll('.time-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');}function loadAnalytics(t){initCharts();updateSummaryCards(analyticsData[t]||analyticsData.today);}function downloadAnalyticsPDF(){alert('PDF Export will be implemented');}
+const A_TBLS=[{id:'V1',label:'VIP 1',group:'vip-right'},{id:'V2',label:'VIP 2',group:'vip-right'},{id:'V3',label:'VIP 3',group:'vip-right'},{id:'V4',label:'VIP 4',group:'vip-left'},{id:'V5',label:'VIP 5',group:'vip-left'},{id:'V6',label:'VIP 6',group:'vip-left'},{id:31,label:'T31',group:'semi-r1-left',rnd:true},{id:32,label:'T32',group:'semi-r1-left',rnd:true},{id:33,label:'T33',group:'semi-r1-left',rnd:true},{id:34,label:'T34',group:'semi-r1-right',rnd:true},{id:35,label:'T35',group:'semi-r1-right',rnd:true},{id:36,label:'T36',group:'semi-r1-right',rnd:true},{id:30,label:'T30',group:'semi-r2-left'},{id:29,label:'T29',group:'semi-r2-left'},{id:28,label:'T28',group:'semi-r2-left'},{id:27,label:'T27',group:'semi-r2-left'},{id:26,label:'T26',group:'semi-r2-right'},{id:25,label:'T25',group:'semi-r2-right'},{id:24,label:'T24',group:'semi-r2-right'},{id:23,label:'T23',group:'semi-r2-right'},{id:12,label:'T12',group:'in-r1a'},{id:11,label:'T11',group:'in-r1a'},{id:10,label:'T10',group:'in-r1a'},{id:9,label:'T9',group:'in-r1a'},{id:8,label:'T8',group:'in-r1b',rnd:true},{id:7,label:'T7',group:'in-r1b',rnd:true},{id:6,label:'T6',group:'in-r1b',rnd:true},{id:5,label:'T5',group:'in-r1c'},{id:4,label:'T4',group:'in-r1c'},{id:3,label:'T3',group:'in-r1c'},{id:2,label:'T2',group:'in-r1c'},{id:1,label:'T1',group:'in-r1c'},{id:13,label:'T13',group:'in-r2a'},{id:14,label:'T14',group:'in-r2a'},{id:15,label:'T15',group:'in-r2a'},{id:16,label:'T16',group:'in-r2a'},{id:17,label:'T17',group:'in-r2a'},{id:18,label:'T18',group:'in-r2b'},{id:19,label:'T19',group:'in-r2b'},{id:20,label:'T20',group:'in-r2b'},{id:21,label:'T21',group:'in-r2b'},{id:22,label:'T22',group:'in-r2b'}];
+let aCharts={};let aRepeatRange='30days';
+function aTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function aDaysAgoStr(n){const d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function aFmtDate(s){const d=new Date(s);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function aFmtDur(m){if(!m)return'—';const h=Math.floor(m/60);const mm=m%60;return h>0?`${h}h ${mm}m`:`${mm}m`;}
+function aGetBookings(range,from,to){
+  // Uses the global BOOKINGS array from the main system (already loaded)
+  const allBk = typeof BOOKINGS!=='undefined'?BOOKINGS:(typeof BK!=='undefined'?BK:[]);
+  const today=aTodayStr();
+  return allBk.filter(b=>{
+    if(!b.date)return false;
+    if(range==='today')return b.date===today;
+    if(range==='7days')return b.date>=aDaysAgoStr(7)&&b.date<=today;
+    if(range==='30days')return b.date>=aDaysAgoStr(30)&&b.date<=today;
+    if(range==='custom')return from&&to&&b.date>=from&&b.date<=to;
+    return false;
+  });
+}
+function aCalcStats(bks){
+  const res=bks.filter(b=>b.type!=='walkin');
+  const wlk=bks.filter(b=>b.type==='walkin');
+  const t=bks.length;
+  const tp=bks.reduce((s,b)=>s+(b.pax||0),0);
+  const rp=res.reduce((s,b)=>s+(b.pax||0),0);
+  const wp=wlk.reduce((s,b)=>s+(b.pax||0),0);
+  const wd=bks.filter(b=>b.duration>0);
+  const rd=res.filter(b=>b.duration>0);
+  const wd2=wlk.filter(b=>b.duration>0);
+  const ad=wd.length?Math.round(wd.reduce((s,b)=>s+b.duration,0)/wd.length):0;
+  const ard=rd.length?Math.round(rd.reduce((s,b)=>s+b.duration,0)/rd.length):0;
+  const awd=wd2.length?Math.round(wd2.reduce((s,b)=>s+b.duration,0)/wd2.length):0;
+  const po=bks.filter(b=>b.preOrder&&b.preOrder.length>0).length;
+  const tc={};bks.forEach(b=>{if(b.tableId)tc[b.tableId]=(tc[b.tableId]||0)+1;(b.combos||[]).forEach(c=>{tc[c]=(tc[c]||0)+1;});});
+  const top3=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return{t,res:res.length,wlk:wlk.length,tp,rp,wp,ad,ard,awd,po,tc,top3};
+}
+function aUpdateCards(s){
+  document.getElementById('s-total').textContent=s.t;
+  document.getElementById('s-total-sub').innerHTML=s.t?`${s.res} reservations (${Math.round(s.res/s.t*100)}%)<br>${s.wlk} walk-ins (${Math.round(s.wlk/s.t*100)}%)`:'No bookings';
+  document.getElementById('s-pax').textContent=s.tp;
+  document.getElementById('s-pax-sub').innerHTML=s.tp?`${s.rp} reservations<br>${s.wp} walk-ins`:'—';
+  document.getElementById('s-dur').textContent=aFmtDur(s.ad);
+  document.getElementById('s-dur-sub').innerHTML=`Res: ${aFmtDur(s.ard)}<br>Walk: ${aFmtDur(s.awd)}`;
+  document.getElementById('s-po').textContent=s.po;
+  document.getElementById('s-po-sub').textContent=s.res?`${Math.round(s.po/s.res*100)}% of reservations`:'—';
+  if(s.top3.length){const lb=s.top3.map(([id])=>String(id).startsWith('V')?id:'T'+id);document.getElementById('s-top').textContent=lb.join(', ');document.getElementById('s-top-sub').textContent=s.top3.map(([,c])=>c).join(', ')+' bookings';}
+  else{document.getElementById('s-top').textContent='—';document.getElementById('s-top-sub').textContent='No data';}
+}
+function aHeatLevel(c,m){if(c===0)return 0;if(c<m)return 1;if(c<m*2)return 2;return 3;}
+function aRenderHeatMap(tc,m){
+  const groups={};A_TBLS.forEach(t=>{if(!groups[t.group])groups[t.group]=[];groups[t.group].push(t);});
+  Object.entries(groups).forEach(([g,tbls])=>{
+    const el=document.getElementById('hm-'+g);
+    if(el)el.innerHTML=tbls.map(t=>`<div class="heat-cell ${t.rnd?'rnd':''} heat-${aHeatLevel(tc[t.id]||0,m)}" title="${t.label}: ${tc[t.id]||0} booking${(tc[t.id]||0)!==1?'s':''}"><div class="heat-label">${t.label}</div><div class="heat-count">${tc[t.id]||0}</div></div>`).join('');
+  });
+}
+function aUpdateHeatLegend(range){
+  let m=1,lb='Today';
+  if(range==='7days'){m=7;lb='Last 7 Days';}
+  else if(range==='30days'){m=30;lb='Last 30 Days';}
+  else if(range==='custom'){m=15;lb='Custom Range';}
+  document.getElementById('hl-1').textContent=m;document.getElementById('hl-2').textContent=m*2;document.getElementById('hl-3').textContent=`${m*3}+`;
+  document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
+  return m;
+}
+const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+const aLegClr=isDark?'#f5f5f7':'#6b7280';
+const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,font:{size:11,family:'var(--font)'},color:aLegClr,generateLabels(chart){return chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:ds.borderColor||ds.backgroundColor,strokeStyle:ds.borderColor||ds.backgroundColor,lineWidth:0,hidden:false,index:i}));}}};
+function aBuildOverTime(bks,range){
+  if(aCharts.ot){aCharts.ot.destroy();}
+  const hrs=['11','12','13','14','15','16','17','18','19','20'];
+  let labels,datasets;
+  if(range!=='today'){
+    const dm={};bks.forEach(b=>{if(b.date){dm[b.date]=dm[b.date]||{r:0,w:0};b.type==='walkin'?dm[b.date].w++:dm[b.date].r++;}});
+    const sd=Object.keys(dm).sort();
+    labels=sd.map(d=>aFmtDate(d));
+    datasets=[{label:'Reservations',data:sd.map(d=>dm[d].r),borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},{label:'Walk-ins',data:sd.map(d=>dm[d].w),borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}];
+  } else {
+    labels=hrs.map(h=>h+':00');
+    datasets=[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}];
+  }
+  aCharts.ot=new Chart(document.getElementById('chartOverTime'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+}
+function aBuildPeak(bks){
+  if(aCharts.pk){aCharts.pk.destroy();}
+  const hrs=['11','12','13','14','15','16','17','18','19','20'];
+  aCharts.pk=new Chart(document.getElementById('chartPeak'),{type:'bar',data:{labels:hrs.map(h=>h+':00'),datasets:[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C',borderWidth:0},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}}});
+}
+function aBuildParty(bks){
+  if(aCharts.pt){aCharts.pt.destroy();}
+  const sz={'1-2':0,'3-4':0,'5-6':0,'7+':0};
+  bks.forEach(b=>{const p=b.pax||0;if(p<=2)sz['1-2']++;else if(p<=4)sz['3-4']++;else if(p<=6)sz['5-6']++;else sz['7+']++;});
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz),datasets:[{data:Object.values(sz),backgroundColor:['#60391C','#C5A25D','#E07E2E','#12484E'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{...aSharedLegend,position:'bottom',labels:{...aSharedLegend.labels,color:aLegClr}}}}});
+}
+function aBuildRepeat(range){
+  const days=range==='1year'?365:30;const from=aDaysAgoStr(days);const today=aTodayStr();
+  const allBk=typeof BOOKINGS!=='undefined'?BOOKINGS:(typeof BK!=='undefined'?BK:[]);
+  const filtered=allBk.filter(b=>b.date>=from&&b.date<=today&&b.name);
+  const cust={};
+  filtered.forEach(b=>{const k=b.phone||b.name;if(!cust[k]){cust[k]={name:b.name,phone:b.phone||'—',visits:0,lastVisit:'',tp:0};}cust[k].visits++;cust[k].tp+=b.pax||0;if(!cust[k].lastVisit||b.date>cust[k].lastVisit)cust[k].lastVisit=b.date;});
+  const reps=Object.values(cust).filter(c=>c.visits>=2).sort((a,b)=>b.visits-a.visits);
+  const hT=range==='1year'?20:5;const mT=range==='1year'?10:3;
+  document.getElementById('freq-high-label').textContent=`${hT}+ visits`;document.getElementById('freq-med-label').textContent=`${mT}–${hT-1} visits`;document.getElementById('freq-low-label').textContent=`2–${mT-1} visits`;
+  const tb=document.getElementById('repeat-tbody');
+  if(!reps.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No repeat customers in this period</td></tr>';return;}
+  tb.innerHTML=reps.map(c=>{const avg=Math.round(c.tp/c.visits);const f=c.visits>=hT?'high':c.visits>=mT?'med':'low';const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';return`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td>${aFmtDate(c.lastVisit)}</td><td>${avg} pax</td><td><span class="badge badge-${f}">${fl}</span></td></tr>`;}).join('');
+}
+function aRender(range,from,to){
+  const bks=aGetBookings(range,from,to);const stats=aCalcStats(bks);
+  aUpdateCards(stats);const m=aUpdateHeatLegend(range);aRenderHeatMap(stats.tc,m);
+  aBuildOverTime(bks,range);aBuildPeak(bks);aBuildParty(bks);aBuildRepeat(aRepeatRange);
+}
+function selectTime(btn,range){
+  document.querySelectorAll('#vanalytics .time-selector .time-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('customRange').classList.toggle('show',range==='custom');
+  if(range!=='custom')aRender(range);
+}
+function applyCustomRange(){const f=document.getElementById('dateFrom').value;const t=document.getElementById('dateTo').value;if(f&&t)aRender('custom',f,t);}
+function selectRepeatTime(btn,range){btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');aRepeatRange=range;aBuildRepeat(range);}
+function loadAnalytics(){aRender('today');}
+function exportPDF(){alert('PDF Export will be implemented');}
+function exportRepeatExcel(){alert('Excel Export will be implemented');}
 </script>
 
 <!-- Back to Top Button -->
