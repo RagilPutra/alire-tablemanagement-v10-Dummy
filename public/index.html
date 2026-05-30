@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Alire — Floor Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
+  /* Analytics */
+  --brand-lighter: #D4B896;
   --bg:#fff;--bg2:#f5f5f4;--bg3:#e8e8e6;
   --tx:#1a1a1a;--tx2:#6b7280;--tx3:#9ca3af;
   --bd:#374151;--bd2:#d1d5db;--bd3:#e5e7eb;
@@ -15,6 +18,8 @@
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 }
 @media(prefers-color-scheme:dark){:root{
+  /* Analytics */
+  --brand-lighter: #D4B896;
   --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
   --tx:#f5f5f7;--tx2:#98989f;--tx3:#636366;
   --bd:#d1d5db;--bd2:#3a3a3c;--bd3:#2c2c2e;
@@ -62,6 +67,42 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .vtab{font-size:13px;padding:8px 20px;cursor:pointer;border-radius:8px;font-family:var(--font);font-weight:500;border:0.5px solid var(--bd2);background:var(--bg);color:var(--tx2)}
 .vtab:hover:not(.active){background:var(--bg2)}
 .vtab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+/* ANALYTICS */
+.analytics-panel{display:none;flex:1;padding:16px;overflow-y:auto}
+.analytics-panel.active{display:block}
+.analytics-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2)}
+.analytics-header h2{font-size:18px;font-weight:600}
+.time-selector{display:flex;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px;gap:2px}
+.time-btn{font-size:12px;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:500;color:var(--tx2);border:none;background:none}
+.time-btn.active{background:var(--bg);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+.sum-card{background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--bd2)}
+.sum-value{font-size:22px;font-weight:600;line-height:1;margin-bottom:4px}
+.sum-label{font-size:10px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em}
+.sum-sub{font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.4}
+.chart-section{background:var(--bg);border:1px solid var(--bd2);border-radius:10px;padding:16px;margin-bottom:16px}
+.chart-title{font-size:12px;font-weight:600;margin-bottom:12px;color:var(--tx2);text-transform:uppercase;letter-spacing:0.05em}
+.chart-container{position:relative;height:240px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.heat-cell{width:56px;height:56px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;border:2px solid transparent}
+.heat-cell:hover{transform:scale(1.08);border-color:var(--tx)}
+.heat-label{font-size:10px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
+.heat-count{font-size:8px;color:#1a1a1a;opacity:0.8}
+.heat-0{background:linear-gradient(135deg,#FFFFFF 0%,#F5F5F5 100%);border:1px solid #E0E0E0!important}
+.heat-1{background:linear-gradient(135deg,#A8E6A3 0%,#88D982 100%)}
+.heat-2{background:linear-gradient(135deg,#FFE082 0%,#FFD54F 100%)}
+.heat-3{background:linear-gradient(135deg,#FFAB91 0%,#FF8A65 100%)}
+.heat-legend{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;flex-wrap:wrap;font-size:11px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-color{width:20px;height:14px;border-radius:3px}
+.repeat-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+.repeat-table th{text-align:left;font-size:10px;color:var(--tx2);font-weight:600;padding:8px;border-bottom:1px solid var(--bd2);text-transform:uppercase;letter-spacing:0.05em;background:var(--bg2)}
+.repeat-table td{padding:10px 8px;border-bottom:1px solid var(--bd2)}
+.repeat-table tr:hover{background:var(--bg2)}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.badge-high{background:#dcfce7;color:#166534}
+.badge-med{background:#fef3c7;color:#854d0e}
+.badge-low{background:#f3f4f6;color:#374151}
 
 .dbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .dbar-lbl{font-size:12px;color:var(--tx2);font-weight:500}
@@ -452,6 +493,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
   <div class="vtabs">
     <button class="vtab active" id="tab-floor" onclick="switchView('floor')">Floor view</button>
     <button class="vtab" id="tab-list" onclick="switchView('list')">Reservation list</button>
+    <button class="vtab" id="tab-analytics" onclick="switchView('analytics')">📊 Analytics</button>
   </div>
 
   <!-- FLOOR VIEW -->
@@ -513,6 +555,39 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         </button>
       </div>
       <div id="wlbody"></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS VIEW -->
+  <div id="vanalytics" class="analytics-panel">
+    <div class="analytics-header">
+      <h2>📊 Analytics</h2>
+      <button class="btn btn-outline" onclick="downloadAnalyticsPDF()">📄 Export PDF</button>
+    </div>
+
+    <div class="time-selector">
+      <button class="time-btn active" onclick="selectTime(this,'today')">Today</button>
+      <button class="time-btn" onclick="selectTime(this,'7days')">Last 7 Days</button>
+      <button class="time-btn" onclick="selectTime(this,'30days')">Last 30 Days</button>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-value" id="totalBookings">24</div><div class="sum-label">Total Bookings</div><div class="sum-sub" id="bookingsBreakdown">18 reservations (75%)<br>6 walk-ins (25%)</div></div>
+      <div class="sum-card"><div class="sum-value" id="totalPax">68</div><div class="sum-label">Total Pax</div><div class="sum-sub" id="paxBreakdown">52 reservations (76%)<br>16 walk-ins (24%)</div></div>
+      <div class="sum-card"><div class="sum-value" id="avgDuration">2h 18m</div><div class="sum-label">Avg Duration</div><div class="sum-sub" id="durationBreakdown">Res: 2h 25m<br>Walk: 1h 58m</div></div>
+      <div class="sum-card"><div class="sum-value" id="preOrders">8</div><div class="sum-label">Pre-Orders</div><div class="sum-sub" id="preOrdersPercent">33% of reservations</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-section"><div class="chart-title">Bookings Over Time</div><div class="chart-container"><canvas id="reservationsChart"></canvas></div></div>
+      <div class="chart-section"><div class="chart-title">Peak Hours</div><div class="chart-container"><canvas id="peakHoursChart"></canvas></div></div>
+    </div>
+
+    <div class="chart-section"><div class="chart-title">Party Size Distribution</div><div class="chart-container"><canvas id="partySizeChart"></canvas></div></div>
+
+    <div class="chart-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="chart-title" style="margin:0">Repeat Customers</div><div class="time-selector"><button class="time-btn active" onclick="selectRepeatTime(this,'30days')">30 Days</button><button class="time-btn" onclick="selectRepeatTime(this,'1year')">1 Year</button></div></div>
+      <table class="repeat-table"><thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Frequency</th></tr></thead><tbody id="repeatCustomersBody"><tr><td>Budi Santoso</td><td>+62 812-345-6789</td><td>5</td><td><span class="badge badge-high">High</span></td></tr></tbody></table>
     </div>
   </div>
 
@@ -820,6 +895,12 @@ const nowS=()=>{const n=new Date();return p2(n.getHours())+':'+p2(n.getMinutes()
 /* Calculate elapsed time for a booking */
 const elapsedTime=(booking)=>{
   if(!booking||!booking.time)return'';
+  
+  // Check if booking date matches today's date
+  const today=new Date();
+  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  if(booking.date!==todayStr)return''; // Not today, don't show elapsed time
+  
   const now=new Date();
   const[bh,bm]=booking.time.split(':').map(Number);
   const bookingTime=new Date();bookingTime.setHours(bh,bm,0,0);
@@ -1229,7 +1310,7 @@ function poGet(){
 }
 
 /* ── VIEW SWITCH ── */
-function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');if(v==='list')renderList();}
+function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');if(v==='list')renderList();if(v==='analytics')loadAnalytics('today');}
 function onFDateChange(){const val=document.getElementById('fdate').value;const it=val===today();fdate=it?'':val;const ch=document.getElementById('fchip');ch.textContent=it?'Today':'Viewing '+fmtSh(val);ch.className='vchip '+(it?'chip-live':'chip-prev');renderFloor();}
 function setFToday(){fdate='';document.getElementById('fdate').value=today();const ch=document.getElementById('fchip');ch.textContent='Today';ch.className='vchip chip-live';renderFloor();}
 function openExpand(){const d=afd();const it=d===today();document.getElementById('exlbl').textContent=it?'Today — '+fmtSh(d):fmtFull(d);renderExFloor();document.getElementById('exov').classList.remove('hidden');}
@@ -2130,6 +2211,8 @@ function scrollToTop() {
 
 // Boot — check session first
 checkSession();
+// ═══ ANALYTICS ═══
+const analyticsData={today:{totalBookings:24,reservations:18,walkins:6,totalPax:68,resPax:52,walkinPax:16,avgDuration:'2h 18m',resDuration:'2h 25m',walkinDuration:'1h 58m',preOrders:8},'7days':{totalBookings:156,reservations:124,walkins:32,totalPax:438,resPax:356,walkinPax:82,avgDuration:'2h 15m',resDuration:'2h 22m',walkinDuration:'1h 55m',preOrders:48},'30days':{totalBookings:682,reservations:548,walkins:134,totalPax:1924,resPax:1586,walkinPax:338,avgDuration:'2h 12m',resDuration:'2h 20m',walkinDuration:'1h 52m',preOrders:215}};let chartInstances={};function initCharts(){const co={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,font:{size:11,family:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'},color:'#d1d5db',usePointStyle:false}}}};const rc=document.getElementById('reservationsChart');if(rc){chartInstances.reservations=new Chart(rc,{type:'line',data:{labels:['11:00','12:00','13:00','17:00','18:00','19:00','20:00'],datasets:[{label:'Reservations',data:[3,5,8,4,6,9,7],borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:3},{label:'Walk-ins',data:[1,2,3,2,3,4,3],borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:3}]},options:co});}const pc=document.getElementById('peakHoursChart');if(pc){chartInstances.peak=new Chart(pc,{type:'bar',data:{labels:['11:00','12:00','13:00','17:00','18:00','19:00','20:00'],datasets:[{label:'Reservations',data:[2,4,6,4,6,5,3],backgroundColor:'#60391C'},{label:'Walk-ins',data:[1,1,2,2,3,2,1],backgroundColor:'#C5A25D'}]},options:{...co,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}const psc=document.getElementById('partySizeChart');if(psc){chartInstances.partySize=new Chart(psc,{type:'doughnut',data:{labels:['2 pax','3-4 pax','5-6 pax','7+ pax'],datasets:[{data:[35,40,20,5],backgroundColor:['#60391C','#C5A25D','#FFB946','#8B6914']}]},options:{...co,plugins:{...co.plugins,legend:{...co.plugins.legend,position:'bottom'}}}});}}function updateSummaryCards(d){document.getElementById('totalBookings').textContent=d.totalBookings;document.getElementById('bookingsBreakdown').innerHTML=d.reservations+' reservations ('+Math.round(d.reservations/d.totalBookings*100)+'%)<br>'+d.walkins+' walk-ins ('+Math.round(d.walkins/d.totalBookings*100)+'%)';document.getElementById('totalPax').textContent=d.totalPax;document.getElementById('paxBreakdown').innerHTML=d.resPax+' reservations ('+Math.round(d.resPax/d.totalPax*100)+'%)<br>'+d.walkinPax+' walk-ins ('+Math.round(d.walkinPax/d.totalPax*100)+'%)';document.getElementById('avgDuration').textContent=d.avgDuration;document.getElementById('durationBreakdown').innerHTML='Res: '+d.resDuration+'<br>Walk: '+d.walkinDuration;document.getElementById('preOrders').textContent=d.preOrders;document.getElementById('preOrdersPercent').textContent=Math.round(d.preOrders/d.reservations*100)+'% of reservations';}function selectTime(b,t){document.querySelectorAll('.time-selector .time-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');updateSummaryCards(analyticsData[t]||analyticsData.today);}function selectRepeatTime(b,t){b.parentElement.querySelectorAll('.time-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');}function loadAnalytics(t){initCharts();updateSummaryCards(analyticsData[t]||analyticsData.today);}function downloadAnalyticsPDF(){alert('PDF Export will be implemented');}
 </script>
 
 <!-- Back to Top Button -->
