@@ -2373,7 +2373,7 @@ const aLegClr=(function(){
 if(typeof Chart!=='undefined'){Chart.defaults.color=aLegClr;}
 const aGridClr=getComputedStyle(document.documentElement).getPropertyValue('--bd3').trim()||'#e5e7eb';
 const aFontFam="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
-const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:ds.borderColor||ds.backgroundColor,strokeStyle:ds.borderColor||ds.backgroundColor,lineWidth:0,hidden:false,index:i}));}}};
+const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam}}};
 const aAxisTick={color:aLegClr,font:{size:11,family:aFontFam}};
 const aAxisGrid={color:aGridClr};
 function aBuildOverTime(bks,range){
@@ -2401,7 +2401,7 @@ function aBuildParty(bks){
   const sz={'1-2':0,'3-4':0,'5-6':0,'7+':0};
   bks.forEach(b=>{const p=b.pax||0;if(p<=2)sz['1-2']++;else if(p<=4)sz['3-4']++;else if(p<=6)sz['5-6']++;else sz['7+']++;});
   const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
-  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz).map(k=>k+' pax'),datasets:[{data:Object.values(sz),backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.labels.map((lb,i)=>({text:lb,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,hidden:false,index:i}));}}}}}});
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz).map(k=>k+' pax'),datasets:[{data:Object.values(sz),backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam}}}}}});
 }
 function aBuildRepeat(range,customFrom,customTo){
   let from,today;
