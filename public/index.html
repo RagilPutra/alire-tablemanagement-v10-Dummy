@@ -652,9 +652,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <div class="time-selector" style="margin:0">
             <button class="time-btn active" onclick="selectRepeatTime(this,'30days')">Last 30 Days</button>
             <button class="time-btn" onclick="selectRepeatTime(this,'1year')">Last 1 Year</button>
+            <button class="time-btn" onclick="selectRepeatTime(this,'custom')">Custom Range</button>
           </div>
           <button class="btn-export" onclick="exportRepeatExcel()">⬇ Excel</button>
         </div>
+      </div>
+      <div class="custom-range" id="repeatCustomRange">
+        <label>From:</label><input type="date" id="repeatDateFrom">
+        <label>To:</label><input type="date" id="repeatDateTo">
+        <button class="btn-apply" onclick="applyRepeatCustomRange()">Apply</button>
       </div>
       <table class="repeat-table">
         <thead><tr><th>Name</th><th>Phone</th><th>Total Visits</th><th>Last Visit</th><th>Avg Party Size</th><th>Frequency</th></tr></thead>
@@ -2292,6 +2298,17 @@ function scrollToTop() {
 // Boot — check session first
 checkSession();
 // ═══ ANALYTICS ═══
+// White background plugin so exported chart PNGs aren't transparent
+if(typeof Chart!=='undefined'){
+  Chart.register({
+    id:'whiteBg',
+    beforeDraw(chart){
+      const{ctx,width,height}=chart;
+      ctx.save();ctx.globalCompositeOperation='destination-over';
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);ctx.restore();
+    }
+  });
+}
 const A_TBLS=[{id:'V1',label:'VIP 1',group:'vip-right'},{id:'V2',label:'VIP 2',group:'vip-right'},{id:'V3',label:'VIP 3',group:'vip-right'},{id:'V4',label:'VIP 4',group:'vip-left'},{id:'V5',label:'VIP 5',group:'vip-left'},{id:'V6',label:'VIP 6',group:'vip-left'},{id:31,label:'T31',group:'semi-r1-left',rnd:true},{id:32,label:'T32',group:'semi-r1-left',rnd:true},{id:33,label:'T33',group:'semi-r1-left',rnd:true},{id:34,label:'T34',group:'semi-r1-right',rnd:true},{id:35,label:'T35',group:'semi-r1-right',rnd:true},{id:36,label:'T36',group:'semi-r1-right',rnd:true},{id:30,label:'T30',group:'semi-r2-left'},{id:29,label:'T29',group:'semi-r2-left'},{id:28,label:'T28',group:'semi-r2-left'},{id:27,label:'T27',group:'semi-r2-left'},{id:26,label:'T26',group:'semi-r2-right'},{id:25,label:'T25',group:'semi-r2-right'},{id:24,label:'T24',group:'semi-r2-right'},{id:23,label:'T23',group:'semi-r2-right'},{id:12,label:'T12',group:'in-r1a'},{id:11,label:'T11',group:'in-r1a'},{id:10,label:'T10',group:'in-r1a'},{id:9,label:'T9',group:'in-r1a'},{id:8,label:'T8',group:'in-r1b',rnd:true},{id:7,label:'T7',group:'in-r1b',rnd:true},{id:6,label:'T6',group:'in-r1b',rnd:true},{id:5,label:'T5',group:'in-r1c'},{id:4,label:'T4',group:'in-r1c'},{id:3,label:'T3',group:'in-r1c'},{id:2,label:'T2',group:'in-r1c'},{id:1,label:'T1',group:'in-r1c'},{id:13,label:'T13',group:'in-r2a'},{id:14,label:'T14',group:'in-r2a'},{id:15,label:'T15',group:'in-r2a'},{id:16,label:'T16',group:'in-r2a'},{id:17,label:'T17',group:'in-r2a'},{id:18,label:'T18',group:'in-r2b'},{id:19,label:'T19',group:'in-r2b'},{id:20,label:'T20',group:'in-r2b'},{id:21,label:'T21',group:'in-r2b'},{id:22,label:'T22',group:'in-r2b'}];
 let aCharts={};let aRepeatRange='30days';
 function aTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -2358,8 +2375,7 @@ function aUpdateHeatLegend(range){
   document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
   return m;
 }
-const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-const aLegClr=isDark?'#e5e5e5':'#374151';
+const aLegClr=getComputedStyle(document.documentElement).getPropertyValue('--tx').trim()||'#1a1a1a';
 const aFontFam="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
 const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:ds.borderColor||ds.backgroundColor,strokeStyle:ds.borderColor||ds.backgroundColor,lineWidth:0,hidden:false,index:i}));}}};
 function aBuildOverTime(bks,range){
@@ -2389,27 +2405,38 @@ function aBuildParty(bks){
   const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
   aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz).map(k=>k+' pax'),datasets:[{data:Object.values(sz),backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.labels.map((lb,i)=>({text:lb,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,hidden:false,index:i}));}}}}}});
 }
-function aBuildRepeat(range){
-  const days=range==='1year'?365:30;const from=aDaysAgoStr(days);const today=aTodayStr();
+function aBuildRepeat(range,customFrom,customTo){
+  let from,today;
+  if(range==='custom'&&customFrom&&customTo){from=customFrom;today=customTo;}
+  else{const days=range==='1year'?365:30;from=aDaysAgoStr(days);today=aTodayStr();}
   const allBk=typeof bookings!=='undefined'?bookings:[];
   const filtered=allBk.filter(b=>b.date>=from&&b.date<=today&&b.name);
   const cust={};
   filtered.forEach(b=>{const k=b.phone||b.name;if(!cust[k]){cust[k]={name:b.name,phone:b.phone||'—',visits:0,lastVisit:'',tp:0};}cust[k].visits++;cust[k].tp+=b.pax||0;if(!cust[k].lastVisit||b.date>cust[k].lastVisit)cust[k].lastVisit=b.date;});
   const reps=Object.values(cust).filter(c=>c.visits>=2).sort((a,b)=>b.visits-a.visits);
-  const hT=range==='1year'?20:5;const mT=range==='1year'?10:3;
+  // Determine thresholds based on range type or span length for custom
+  let hT,mT;
+  if(range==='1year'){hT=20;mT=10;}
+  else if(range==='custom'){
+    const spanDays=(new Date(today)-new Date(from))/(1000*60*60*24);
+    if(spanDays>180){hT=20;mT=10;}else if(spanDays>60){hT=10;mT=5;}else{hT=5;mT=3;}
+  } else {hT=5;mT=3;}
   document.getElementById('freq-high-label').textContent=`${hT}+ visits`;document.getElementById('freq-med-label').textContent=`${mT}–${hT-1} visits`;document.getElementById('freq-low-label').textContent=`2–${mT-1} visits`;
-  aLastRepeatData={reps,hT,mT,range};
+  aLastRepeatData={reps,hT,mT,range,from,to:today};
   const tb=document.getElementById('repeat-tbody');
   if(!reps.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No repeat customers in this period</td></tr>';return;}
   tb.innerHTML=reps.map(c=>{const avg=Math.round(c.tp/c.visits);const f=c.visits>=hT?'high':c.visits>=mT?'med':'low';const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';return`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td>${aFmtDate(c.lastVisit)}</td><td>${avg} pax</td><td><span class="badge badge-${f}">${fl}</span></td></tr>`;}).join('');
 }
-let aLastStats=null, aLastRange='today', aLastRepeatData=null;
+let aLastStats=null, aLastRange='today', aLastRepeatData=null, aLastCustomFrom=null, aLastCustomTo=null;
 function aRender(range,from,to){
   aLastRange=range;
+  if(range==='custom'){aLastCustomFrom=from;aLastCustomTo=to;}
   const bks=aGetBookings(range,from,to);const stats=aCalcStats(bks);
   aLastStats=stats;
   aUpdateCards(stats);const m=aUpdateHeatLegend(range);aRenderHeatMap(stats.tc,m);
-  aBuildOverTime(bks,range);aBuildPeak(bks);aBuildParty(bks);aBuildRepeat(aRepeatRange);
+  aBuildOverTime(bks,range);aBuildPeak(bks);aBuildParty(bks);
+  if(aRepeatRange==='custom'&&aLastRepeatData&&aLastRepeatData.range==='custom'){aBuildRepeat('custom',aLastRepeatData.from,aLastRepeatData.to);}
+  else{aBuildRepeat(aRepeatRange);}
 }
 function selectTime(btn,range){
   document.querySelectorAll('#vanalytics .time-selector .time-btn').forEach(b=>b.classList.remove('active'));
@@ -2418,7 +2445,18 @@ function selectTime(btn,range){
   if(range!=='custom')aRender(range);
 }
 function applyCustomRange(){const f=document.getElementById('dateFrom').value;const t=document.getElementById('dateTo').value;if(f&&t)aRender('custom',f,t);}
-function selectRepeatTime(btn,range){btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');aRepeatRange=range;aBuildRepeat(range);}
+function selectRepeatTime(btn,range){
+  btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  aRepeatRange=range;
+  document.getElementById('repeatCustomRange').classList.toggle('show',range==='custom');
+  if(range!=='custom')aBuildRepeat(range);
+}
+function applyRepeatCustomRange(){
+  const f=document.getElementById('repeatDateFrom').value;
+  const t=document.getElementById('repeatDateTo').value;
+  if(f&&t)aBuildRepeat('custom',f,t);
+}
 function loadAnalytics(){aRender('today');}
 
 // ─── PDF EXPORT ───
@@ -2427,11 +2465,23 @@ const aRangeLabel={today:'Today',
 function exportPDF(){
   if(!aLastStats){alert('No data to export yet');return;}
   const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
-  const W=210,m=15;let y=m;
+  const W=210,H=297,m=15;let y=m;
+
+  // Header
   doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
   doc.text('Alire — Analytics Report',m,y);y+=8;
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
-  doc.text(`Period: ${aRangeLabel[aLastRange]||aLastRange} | Generated: ${new Date().toLocaleString('en-GB')}`,m,y);y+=10;
+  let periodText=aRangeLabel[aLastRange]||aLastRange;
+  if(aLastRange==='custom'&&aLastCustomFrom&&aLastCustomTo){
+    periodText=`Custom Range (${aFmtDate(aLastCustomFrom)} – ${aFmtDate(aLastCustomTo)})`;
+  } else if(aLastRange==='today'){
+    periodText=`Today (${aFmtDate(aTodayStr())})`;
+  } else if(aLastRange==='7days'){
+    periodText=`Last 7 Days (${aFmtDate(aDaysAgoStr(7))} – ${aFmtDate(aTodayStr())})`;
+  } else if(aLastRange==='30days'){
+    periodText=`Last 30 Days (${aFmtDate(aDaysAgoStr(30))} – ${aFmtDate(aTodayStr())})`;
+  }
+  doc.text(`Period: ${periodText} | Generated: ${new Date().toLocaleString('en-GB')}`,m,y);y+=10;
   doc.setDrawColor(200,200,200);doc.line(m,y,W-m,y);y+=8;
 
   const s=aLastStats;
@@ -2453,10 +2503,51 @@ function exportPDF(){
     doc.text(lines,m+45,y);
     y+=5*lines.length+1;
   });
-  y+=5;
+  y+=4;
+
+  // ─── Charts as images ───
+  function addChartImage(canvasId, title, maxW, maxH){
+    const canvas=document.getElementById(canvasId);
+    if(!canvas)return;
+    if(y+8+maxH>H-15){doc.addPage();y=m;}
+    doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+    doc.text(title,m,y);y+=5;
+    try{
+      const imgData=canvas.toDataURL('image/png',1.0);
+      const ratio=canvas.width/canvas.height;
+      let w=maxW,h=w/ratio;
+      if(h>maxH){h=maxH;w=h*ratio;}
+      doc.addImage(imgData,'PNG',m,y,w,h);
+      y+=h+8;
+    }catch(e){
+      doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
+      doc.text('(chart unavailable)',m,y);y+=8;
+    }
+  }
+  addChartImage('chartOverTime','Bookings Over Time',W-2*m,70);
+  addChartImage('chartPeak','Peak Hours',(W-2*m-6)/2,65);
+  // Party chart goes side by side with peak hours - reposition
+  {
+    const canvas=document.getElementById('chartParty');
+    if(canvas){
+      try{
+        const imgData=canvas.toDataURL('image/png',1.0);
+        const ratio=canvas.width/canvas.height;
+        const maxW=(W-2*m-6)/2,maxH=65;
+        let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio;}
+        // Position next to peak hours chart (same y as before adding it)
+        const partyY=y-65-8; // align with peak hours chart top
+        doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+        doc.text('Party Size Distribution',m+(W-2*m)/2+3,partyY-5);
+        doc.addImage(imgData,'PNG',m+(W-2*m)/2+3,partyY,w,h);
+      }catch(e){}
+    }
+  }
+  y+=4;
 
   // Table utilization
-  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  if(y>H-50){doc.addPage();y=m;}
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   doc.text('Table Utilization',m,y);y+=7;
   doc.setFontSize(9);doc.setFont('helvetica','normal');
   const tcEntries=Object.entries(s.tc).sort((a,b)=>{
@@ -2477,9 +2568,14 @@ function exportPDF(){
   y+=5;
 
   // Repeat customers
-  if(y>250){doc.addPage();y=m;}
+  if(y>H-40){doc.addPage();y=m;}
   doc.setFontSize(12);doc.setFont('helvetica','bold');
-  doc.text('Repeat Customers ('+(aLastRepeatData&&aLastRepeatData.range==='1year'?'Last 1 Year':'Last 30 Days')+')',m,y);y+=8;
+  let repeatLabel='Last 30 Days';
+  if(aLastRepeatData){
+    if(aLastRepeatData.range==='1year')repeatLabel='Last 1 Year';
+    else if(aLastRepeatData.range==='custom')repeatLabel=`Custom Range (${aFmtDate(aLastRepeatData.from)} – ${aFmtDate(aLastRepeatData.to)})`;
+  }
+  doc.text('Repeat Customers ('+repeatLabel+')',m,y);y+=8;
   if(aLastRepeatData&&aLastRepeatData.reps.length){
     doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setFillColor(245,245,244);
     doc.rect(m,y-4,W-2*m,6,'F');
@@ -2488,7 +2584,7 @@ function exportPDF(){
     doc.setFont('helvetica','normal');
     const{hT,mT}=aLastRepeatData;
     aLastRepeatData.reps.forEach(c=>{
-      if(y>280){doc.addPage();y=m;}
+      if(y>H-15){doc.addPage();y=m;}
       const avg=Math.round(c.tp/c.visits);
       const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';
       doc.text(String(c.name).substring(0,22),m+2,y);
