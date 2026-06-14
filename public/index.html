@@ -2298,17 +2298,6 @@ function scrollToTop() {
 // Boot — check session first
 checkSession();
 // ═══ ANALYTICS ═══
-// White background plugin so exported chart PNGs aren't transparent
-if(typeof Chart!=='undefined'){
-  Chart.register({
-    id:'whiteBg',
-    beforeDraw(chart){
-      const{ctx,width,height}=chart;
-      ctx.save();ctx.globalCompositeOperation='destination-over';
-      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);ctx.restore();
-    }
-  });
-}
 const A_TBLS=[{id:'V1',label:'VIP 1',group:'vip-right'},{id:'V2',label:'VIP 2',group:'vip-right'},{id:'V3',label:'VIP 3',group:'vip-right'},{id:'V4',label:'VIP 4',group:'vip-left'},{id:'V5',label:'VIP 5',group:'vip-left'},{id:'V6',label:'VIP 6',group:'vip-left'},{id:31,label:'T31',group:'semi-r1-left',rnd:true},{id:32,label:'T32',group:'semi-r1-left',rnd:true},{id:33,label:'T33',group:'semi-r1-left',rnd:true},{id:34,label:'T34',group:'semi-r1-right',rnd:true},{id:35,label:'T35',group:'semi-r1-right',rnd:true},{id:36,label:'T36',group:'semi-r1-right',rnd:true},{id:30,label:'T30',group:'semi-r2-left'},{id:29,label:'T29',group:'semi-r2-left'},{id:28,label:'T28',group:'semi-r2-left'},{id:27,label:'T27',group:'semi-r2-left'},{id:26,label:'T26',group:'semi-r2-right'},{id:25,label:'T25',group:'semi-r2-right'},{id:24,label:'T24',group:'semi-r2-right'},{id:23,label:'T23',group:'semi-r2-right'},{id:12,label:'T12',group:'in-r1a'},{id:11,label:'T11',group:'in-r1a'},{id:10,label:'T10',group:'in-r1a'},{id:9,label:'T9',group:'in-r1a'},{id:8,label:'T8',group:'in-r1b',rnd:true},{id:7,label:'T7',group:'in-r1b',rnd:true},{id:6,label:'T6',group:'in-r1b',rnd:true},{id:5,label:'T5',group:'in-r1c'},{id:4,label:'T4',group:'in-r1c'},{id:3,label:'T3',group:'in-r1c'},{id:2,label:'T2',group:'in-r1c'},{id:1,label:'T1',group:'in-r1c'},{id:13,label:'T13',group:'in-r2a'},{id:14,label:'T14',group:'in-r2a'},{id:15,label:'T15',group:'in-r2a'},{id:16,label:'T16',group:'in-r2a'},{id:17,label:'T17',group:'in-r2a'},{id:18,label:'T18',group:'in-r2b'},{id:19,label:'T19',group:'in-r2b'},{id:20,label:'T20',group:'in-r2b'},{id:21,label:'T21',group:'in-r2b'},{id:22,label:'T22',group:'in-r2b'}];
 let aCharts={};let aRepeatRange='30days';
 function aTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -2506,6 +2495,15 @@ function exportPDF(){
   y+=4;
 
   // ─── Charts as images ───
+  // Renders a chart canvas onto a white-background offscreen canvas, returns dataURL
+  function chartToWhitePNG(canvas){
+    const tmp=document.createElement('canvas');
+    tmp.width=canvas.width;tmp.height=canvas.height;
+    const ctx=tmp.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,tmp.width,tmp.height);
+    ctx.drawImage(canvas,0,0);
+    return tmp.toDataURL('image/png',1.0);
+  }
   function addChartImage(canvasId, title, maxW, maxH){
     const canvas=document.getElementById(canvasId);
     if(!canvas)return;
@@ -2513,7 +2511,7 @@ function exportPDF(){
     doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
     doc.text(title,m,y);y+=5;
     try{
-      const imgData=canvas.toDataURL('image/png',1.0);
+      const imgData=chartToWhitePNG(canvas);
       const ratio=canvas.width/canvas.height;
       let w=maxW,h=w/ratio;
       if(h>maxH){h=maxH;w=h*ratio;}
@@ -2531,7 +2529,7 @@ function exportPDF(){
     const canvas=document.getElementById('chartParty');
     if(canvas){
       try{
-        const imgData=canvas.toDataURL('image/png',1.0);
+        const imgData=chartToWhitePNG(canvas);
         const ratio=canvas.width/canvas.height;
         const maxW=(W-2*m-6)/2,maxH=65;
         let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio;}
