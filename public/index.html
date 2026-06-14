@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Alire — Floor Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2385,7 +2386,8 @@ function aBuildParty(bks){
   if(aCharts.pt){aCharts.pt.destroy();}
   const sz={'1-2':0,'3-4':0,'5-6':0,'7+':0};
   bks.forEach(b=>{const p=b.pax||0;if(p<=2)sz['1-2']++;else if(p<=4)sz['3-4']++;else if(p<=6)sz['5-6']++;else sz['7+']++;});
-  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz),datasets:[{data:Object.values(sz),backgroundColor:['#60391C','#C5A25D','#E07E2E','#12484E'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{...aSharedLegend,position:'bottom',labels:{...aSharedLegend.labels,color:aLegClr}}}}});
+  const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz).map(k=>k+' pax'),datasets:[{data:Object.values(sz),backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.labels.map((lb,i)=>({text:lb,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,hidden:false,index:i}));}}}}}});
 }
 function aBuildRepeat(range){
   const days=range==='1year'?365:30;const from=aDaysAgoStr(days);const today=aTodayStr();
@@ -2396,12 +2398,16 @@ function aBuildRepeat(range){
   const reps=Object.values(cust).filter(c=>c.visits>=2).sort((a,b)=>b.visits-a.visits);
   const hT=range==='1year'?20:5;const mT=range==='1year'?10:3;
   document.getElementById('freq-high-label').textContent=`${hT}+ visits`;document.getElementById('freq-med-label').textContent=`${mT}–${hT-1} visits`;document.getElementById('freq-low-label').textContent=`2–${mT-1} visits`;
+  aLastRepeatData={reps,hT,mT,range};
   const tb=document.getElementById('repeat-tbody');
   if(!reps.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No repeat customers in this period</td></tr>';return;}
   tb.innerHTML=reps.map(c=>{const avg=Math.round(c.tp/c.visits);const f=c.visits>=hT?'high':c.visits>=mT?'med':'low';const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';return`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td>${aFmtDate(c.lastVisit)}</td><td>${avg} pax</td><td><span class="badge badge-${f}">${fl}</span></td></tr>`;}).join('');
 }
+let aLastStats=null, aLastRange='today', aLastRepeatData=null;
 function aRender(range,from,to){
+  aLastRange=range;
   const bks=aGetBookings(range,from,to);const stats=aCalcStats(bks);
+  aLastStats=stats;
   aUpdateCards(stats);const m=aUpdateHeatLegend(range);aRenderHeatMap(stats.tc,m);
   aBuildOverTime(bks,range);aBuildPeak(bks);aBuildParty(bks);aBuildRepeat(aRepeatRange);
 }
@@ -2414,8 +2420,120 @@ function selectTime(btn,range){
 function applyCustomRange(){const f=document.getElementById('dateFrom').value;const t=document.getElementById('dateTo').value;if(f&&t)aRender('custom',f,t);}
 function selectRepeatTime(btn,range){btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');aRepeatRange=range;aBuildRepeat(range);}
 function loadAnalytics(){aRender('today');}
-function exportPDF(){alert('PDF Export will be implemented');}
-function exportRepeatExcel(){alert('Excel Export will be implemented');}
+
+// ─── PDF EXPORT ───
+const aRangeLabel={today:'Today',
+  '7days':'Last 7 Days','30days':'Last 30 Days','custom':'Custom Range'};
+function exportPDF(){
+  if(!aLastStats){alert('No data to export yet');return;}
+  const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,m=15;let y=m;
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
+  doc.text('Alire — Analytics Report',m,y);y+=8;
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+  doc.text(`Period: ${aRangeLabel[aLastRange]||aLastRange} | Generated: ${new Date().toLocaleString('en-GB')}`,m,y);y+=10;
+  doc.setDrawColor(200,200,200);doc.line(m,y,W-m,y);y+=8;
+
+  const s=aLastStats;
+  // Summary section
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+  doc.text('Summary',m,y);y+=7;
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  const rows=[
+    ['Total Bookings', `${s.t} (${s.res} reservations, ${s.wlk} walk-ins)`],
+    ['Total Pax', `${s.tp} (${s.rp} reservations, ${s.wp} walk-ins)`],
+    ['Avg Duration', `${aFmtDur(s.ad)} (Res: ${aFmtDur(s.ard)}, Walk: ${aFmtDur(s.awd)})`],
+    ['Pre-Orders', `${s.po} (${s.res?Math.round(s.po/s.res*100):0}% of reservations)`],
+    ['Top 3 Tables', s.top3.length?s.top3.map(([id,c])=>`${String(id).startsWith('V')?id:'T'+id} (${c})`).join(', '):'—'],
+  ];
+  rows.forEach(([lb,val])=>{
+    doc.setFont('helvetica','bold');doc.text(lb+':',m,y);
+    doc.setFont('helvetica','normal');
+    const lines=doc.splitTextToSize(val,W-2*m-45);
+    doc.text(lines,m+45,y);
+    y+=5*lines.length+1;
+  });
+  y+=5;
+
+  // Table utilization
+  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Table Utilization',m,y);y+=7;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  const tcEntries=Object.entries(s.tc).sort((a,b)=>{
+    const an=String(a[0]),bn=String(b[0]);
+    return an.localeCompare(bn,undefined,{numeric:true});
+  });
+  if(!tcEntries.length){doc.text('No bookings in this period.',m,y);y+=6;}
+  else{
+    let col=0;const colW=(W-2*m)/4;
+    tcEntries.forEach(([id,c])=>{
+      const label=(String(id).startsWith('V')?id:'T'+id)+': '+c;
+      doc.text(label,m+col*colW,y);
+      col++;
+      if(col>=4){col=0;y+=5;}
+    });
+    if(col>0)y+=5;
+  }
+  y+=5;
+
+  // Repeat customers
+  if(y>250){doc.addPage();y=m;}
+  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Repeat Customers ('+(aLastRepeatData&&aLastRepeatData.range==='1year'?'Last 1 Year':'Last 30 Days')+')',m,y);y+=8;
+  if(aLastRepeatData&&aLastRepeatData.reps.length){
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setFillColor(245,245,244);
+    doc.rect(m,y-4,W-2*m,6,'F');
+    doc.text('Name',m+2,y);doc.text('Phone',m+50,y);doc.text('Visits',m+90,y);doc.text('Last Visit',m+110,y);doc.text('Avg Pax',m+145,y);doc.text('Frequency',m+170,y);
+    y+=7;
+    doc.setFont('helvetica','normal');
+    const{hT,mT}=aLastRepeatData;
+    aLastRepeatData.reps.forEach(c=>{
+      if(y>280){doc.addPage();y=m;}
+      const avg=Math.round(c.tp/c.visits);
+      const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';
+      doc.text(String(c.name).substring(0,22),m+2,y);
+      doc.text(String(c.phone),m+50,y);
+      doc.text(String(c.visits),m+90,y);
+      doc.text(aFmtDate(c.lastVisit),m+110,y);
+      doc.text(avg+' pax',m+145,y);
+      doc.text(fl,m+170,y);
+      y+=6;
+    });
+  } else {
+    doc.setFontSize(10);doc.setFont('helvetica','normal');
+    doc.text('No repeat customers in this period.',m,y);
+  }
+
+  // Footer
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFontSize(8);doc.setTextColor(150,150,150);
+    doc.text(`Alire — Sajian Nusantara | Generated by Alire on ${new Date().toLocaleString('en-GB')}`,m,290);
+  }
+
+  doc.save(`Alire-Analytics-${aLastRange}-${aTodayStr()}.pdf`);
+}
+
+// ─── EXCEL EXPORT ───
+function exportRepeatExcel(){
+  if(!aLastRepeatData||!aLastRepeatData.reps.length){alert('No repeat customer data to export');return;}
+  const{reps,hT,mT}=aLastRepeatData;
+  const rows=reps.map(c=>({
+    Name:c.name,
+    Phone:c.phone,
+    'Total Visits':c.visits,
+    'Last Visit':aFmtDate(c.lastVisit),
+    'Avg Party Size':Math.round(c.tp/c.visits),
+    Frequency:c.visits>=hT?'High':c.visits>=mT?'Medium':'Low'
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:22},{wch:16},{wch:12},{wch:14},{wch:14},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Repeat Customers');
+  const periodLabel=aLastRepeatData.range==='1year'?'1year':'30days';
+  XLSX.writeFile(wb,`Alire-RepeatCustomers-${periodLabel}-${aTodayStr()}.xlsx`);
+}
 </script>
 
 <!-- Back to Top Button -->
