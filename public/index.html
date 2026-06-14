@@ -2364,9 +2364,18 @@ function aUpdateHeatLegend(range){
   document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
   return m;
 }
-const aLegClr=getComputedStyle(document.documentElement).getPropertyValue('--tx').trim()||'#1a1a1a';
+const aLegClr=(function(){
+  const v=getComputedStyle(document.documentElement).getPropertyValue('--tx').trim();
+  if(v)return v;
+  // Fallback: detect dark mode directly if CSS var read fails
+  return window.matchMedia('(prefers-color-scheme: dark)').matches?'#f5f5f7':'#1a1a1a';
+})();
+if(typeof Chart!=='undefined'){Chart.defaults.color=aLegClr;}
+const aGridClr=getComputedStyle(document.documentElement).getPropertyValue('--bd3').trim()||'#e5e7eb';
 const aFontFam="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
 const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:ds.borderColor||ds.backgroundColor,strokeStyle:ds.borderColor||ds.backgroundColor,lineWidth:0,hidden:false,index:i}));}}};
+const aAxisTick={color:aLegClr,font:{size:11,family:aFontFam}};
+const aAxisGrid={color:aGridClr};
 function aBuildOverTime(bks,range){
   if(aCharts.ot){aCharts.ot.destroy();}
   const hrs=['11','12','13','14','15','16','17','18','19','20'];
@@ -2380,12 +2389,12 @@ function aBuildOverTime(bks,range){
     labels=hrs.map(h=>h+':00');
     datasets=[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}];
   }
-  aCharts.ot=new Chart(document.getElementById('chartOverTime'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  aCharts.ot=new Chart(document.getElementById('chartOverTime'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{ticks:aAxisTick,grid:aAxisGrid},y:{beginAtZero:true,ticks:{...aAxisTick,stepSize:1},grid:aAxisGrid}}}});
 }
 function aBuildPeak(bks){
   if(aCharts.pk){aCharts.pk.destroy();}
   const hrs=['11','12','13','14','15','16','17','18','19','20'];
-  aCharts.pk=new Chart(document.getElementById('chartPeak'),{type:'bar',data:{labels:hrs.map(h=>h+':00'),datasets:[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C',borderWidth:0},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}}});
+  aCharts.pk=new Chart(document.getElementById('chartPeak'),{type:'bar',data:{labels:hrs.map(h=>h+':00'),datasets:[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C',borderWidth:0},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{stacked:true,ticks:aAxisTick,grid:aAxisGrid},y:{stacked:true,beginAtZero:true,ticks:{...aAxisTick,stepSize:1},grid:aAxisGrid}}}});
 }
 function aBuildParty(bks){
   if(aCharts.pt){aCharts.pt.destroy();}
