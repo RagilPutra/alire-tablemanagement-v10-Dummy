@@ -69,6 +69,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_bookings_type ON bookings(type);
 `);
 
+// Migration: add endedAt column if it doesn't exist yet (for existing databases)
+try {
+  const cols = db.prepare("PRAGMA table_info(bookings)").all();
+  const hasEndedAt = cols.some(c => c.name === 'endedAt');
+  if (!hasEndedAt) {
+    db.exec(`ALTER TABLE bookings ADD COLUMN endedAt TEXT DEFAULT NULL`);
+    console.log('✅ Migration: added endedAt column to bookings table');
+  }
+} catch (e) {
+  console.error('Migration error (endedAt):', e);
+}
+
 console.log('✓ SQLite database initialized');
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -329,6 +341,29 @@ app.delete('/api/bookings/:id', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Delete booking error:', error);
     res.status(500).json({ error: 'Failed to delete booking' });
+  }
+});
+
+// End Session: marks booking as ended (frees table) but KEEPS the record for analytics
+app.post('/api/bookings/:id/end', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const endedAt = new Date().toISOString();
+    const stmt = db.prepare('UPDATE bookings SET endedAt = ? WHERE id = ?');
+    const result = stmt.run(endedAt, id);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id);
+    updated.combos = JSON.parse(updated.combos);
+    updated.preOrder = JSON.parse(updated.preOrder);
+
+    res.json(updated);
+  } catch (error) {
+    console.error('End session error:', error);
+    res.status(500).json({ error: 'Failed to end session' });
   }
 });
 

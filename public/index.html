@@ -241,6 +241,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .rl-actions{display:flex;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--bd3);background:var(--bg2);flex-wrap:wrap}
 .btn-pdf{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;background:var(--brand);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font)}
 .btn-pdf:hover{opacity:.88}
+.btn-export{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;background:var(--brand);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font)}
+.btn-export:hover{opacity:.88}
 .rl-sum{font-size:12px;color:var(--tx2);padding:8px 16px;background:var(--bg2);border-bottom:0.5px solid var(--bd3);display:flex;gap:16px;flex-wrap:wrap}
 .rl-body{padding:16px;display:flex;flex-direction:column;gap:14px}
 .rl-empty{font-size:14px;color:var(--tx3);text-align:center;padding:40px 0}
@@ -574,7 +576,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
   <div id="vanalytics" class="analytics-panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
       <div style="font-size:18px;font-weight:600">Analytics</div>
-      <button class="btn-export" onclick="exportPDF()">📄 Export PDF</button>
+      <button class="btn-export" onclick="exportPDF()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 1h6l4 4v10H4V1z" stroke="currentColor" stroke-width="1.3"/><path d="M10 1v4h4M6 9h4M6 12h4M6 6h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Export PDF
+      </button>
     </div>
 
     <div class="time-selector">
@@ -654,7 +659,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
             <button class="time-btn" onclick="selectRepeatTime(this,'1year')">Last 1 Year</button>
             <button class="time-btn" onclick="selectRepeatTime(this,'custom')">Custom Range</button>
           </div>
-          <button class="btn-export" onclick="exportRepeatExcel()">⬇ Excel</button>
+          <button class="btn-export" onclick="exportRepeatExcel()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Excel
+          </button>
         </div>
       </div>
       <div class="custom-range" id="repeatCustomRange">
@@ -1432,7 +1440,7 @@ function hasConflict(tid,date,time,excId,duration){
   });
 }
 function nearestB(tid,date){
-  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid)));
+  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&!b.endedAt);
   if(!rel.length)return null;
   rel.sort((a,b)=>a.time.localeCompare(b.time));
   if(date===today()){
@@ -1463,7 +1471,7 @@ function nearestB(tid,date){
   return rel[0];
 }
 function fStatus(tid,date){
-  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid)));
+  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&!b.endedAt);
   if(!rel.length)return'av';
   // Get the currently active booking (not just count)
   const b=nearestB(tid,date);
@@ -1622,7 +1630,7 @@ function openTI(tid){
       }
       const bellSrcPanel=bellColor==='red'?'bell-red.png':bellColor==='yellow'?'bell-yellow.png':'';
       const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;gap:6px;width:fit-content"><div style="font-size:13px">🕐</div><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}</div>${showBell?`<img src="${bellSrcPanel}" style="width:14px;height:14px">`:''}</div>`:'';
-      return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes.length>30?b.notes.substring(0,30)+'...':b.notes}</div>`:''}${timerBox}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>{const itemNote=i.itemNote?(i.itemNote.length>30?i.itemNote.substring(0,30)+'...':i.itemNote):'';return`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${itemNote?`<div class="podit-note">📝 ${itemNote}</div>`:''}</div>`}).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}<button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div></div>`;
+      return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes.length>30?b.notes.substring(0,30)+'...':b.notes}</div>`:''}${timerBox}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>{const itemNote=i.itemNote?(i.itemNote.length>30?i.itemNote.substring(0,30)+'...':i.itemNote):'';return`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${itemNote?`<div class="podit-note">📝 ${itemNote}</div>`:''}</div>`}).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}${b.endedAt?`<span class="bdg" style="background:#e5e7eb;color:#374151">Completed</span>`:`<button class="ibtn iok" title="End session" onclick="showCF('done',${b.id})">✓</button>`}<button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div></div>`;
     }).join('');}
   openOv('ov-ti');
 }
@@ -1940,12 +1948,26 @@ function showCF(type,id){
   const sum=`<strong>${b.name||'Walk-in'}</strong> — ${lbl(b.tableId)}, ${fmtSh(b.date)} at ${b.time}${b.pax?' · '+b.pax+' pax':''}`;
   const tit=document.getElementById('cf-tit'),ban=document.getElementById('cf-banner'),sub=document.getElementById('cf-sub'),btn=document.getElementById('cf-btn');
   if(type==='delete'){tit.textContent='Cancel reservation';ban.className='cbanner cbdanger';ban.innerHTML=sum;sub.textContent='This will permanently remove this reservation.';btn.textContent='Cancel reservation';btn.className='mred';}
-  else{tit.textContent='Mark as done';ban.className='cbanner cbdone';ban.innerHTML=sum;sub.textContent='Clears the reservation and marks the table available.';btn.textContent='Mark as done';btn.className='mgrn';}
+  else{tit.textContent='End session';ban.className='cbanner cbdone';ban.innerHTML=sum;sub.textContent='Frees up the table. The booking record is kept for reports.';btn.textContent='End session';btn.className='mgrn';}
   closeOv('ov-ti');openOv('ov-cf');
 }
 async function runCF(){
   if(!cfAction)return;const{type,id}=cfAction;cfAction=null;
-  try{await api(`/api/bookings/${id}`,{method:'DELETE'});bookings=bookings.filter(x=>x.id!==id);closeOv('ov-cf');renderFloor();renderExFloor();if(view==='list')renderList();showToast(type==='delete'?'Reservation cancelled':'Table cleared');}
+  try{
+    if(type==='delete'){
+      await api(`/api/bookings/${id}`,{method:'DELETE'});
+      bookings=bookings.filter(x=>x.id!==id);
+      closeOv('ov-cf');renderFloor();renderExFloor();if(view==='list')renderList();
+      showToast('Reservation cancelled');
+    } else {
+      // 'done' = End Session: keep the record (for analytics/repeat customers), just mark ended & free the table
+      const updated=await api(`/api/bookings/${id}/end`,{method:'POST'});
+      const idx=bookings.findIndex(x=>x.id===id);
+      if(idx>=0)bookings[idx]=updated;
+      closeOv('ov-cf');renderFloor();renderExFloor();if(view==='list')renderList();
+      showToast('Table cleared');
+    }
+  }
   catch(e){showToast(e.message,'error');}
 }
 
@@ -2223,9 +2245,9 @@ function renderList(){
         // Phone in metadata row after table
         const phoneText=b.phone?` · Phone: ${b.phone}`:'';
         // Flags inline
-        const flags=[];if(hpo)flags.push('<span class="bdg bp">PO</span>');if(isc)flags.push('<span class="bdg bc">COMBO</span>');
+        const flags=[];if(hpo)flags.push('<span class="bdg bp">PO</span>');if(isc)flags.push('<span class="bdg bc">COMBO</span>');if(b.endedAt)flags.push('<span class="bdg" style="background:#e5e7eb;color:#374151">Completed</span>');
         const flagText=flags.length?' · '+flags.join(' '):'';
-        html+=`<div class="rlc ${cc}"><div class="rtcol"><div class="rtim">${b.time}</div><div class="rdot ${dc}"></div></div><div class="rbody"><div class="rname">${b.name||'Walk-in'} <span class="bdg ${bc2}">${bt}</span></div><div class="rmeta">${lbl(b.tableId)}${phoneText}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}${ex.length?' · '+ex.join(' · '):''}${flagText}</div>${hpo?`<div style="font-size:10px;color:#1a1a1a;margin-top:3px;padding:2px 7px;border-radius:10px;background:#f0f0ef;border:0.5px solid #4b5563;display:inline-block">PO: ${b.preOrder.map(i=>i.name+' ×'+i.qty+(i.itemNote?' ('+i.itemNote+')':'')).join(', ')}</div>`:''}</div><div class="racts"><button class="ibtn iok" onclick="showCF('done',${b.id})">✓</button><button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>`;
+        html+=`<div class="rlc ${cc}"><div class="rtcol"><div class="rtim">${b.time}</div><div class="rdot ${dc}"></div></div><div class="rbody"><div class="rname">${b.name||'Walk-in'} <span class="bdg ${bc2}">${bt}</span></div><div class="rmeta">${lbl(b.tableId)}${phoneText}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}${ex.length?' · '+ex.join(' · '):''}${flagText}</div>${hpo?`<div style="font-size:10px;color:#1a1a1a;margin-top:3px;padding:2px 7px;border-radius:10px;background:#f0f0ef;border:0.5px solid #4b5563;display:inline-block">PO: ${b.preOrder.map(i=>i.name+' ×'+i.qty+(i.itemNote?' ('+i.itemNote+')':'')).join(', ')}</div>`:''}</div><div class="racts">${b.endedAt?'':`<button class="ibtn iok" title="End session" onclick="showCF('done',${b.id})">✓</button>`}<button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div>`;
       });html+='</div>';
     });html+='</div>';
   });
@@ -2317,6 +2339,18 @@ function aGetBookings(range,from,to){
     return false;
   });
 }
+// Returns actual duration in minutes if endedAt is set, otherwise planned duration
+function aEffectiveDuration(b){
+  if(b.endedAt&&b.date&&b.time){
+    try{
+      const start=new Date(`${b.date}T${b.time}:00`);
+      const end=new Date(b.endedAt);
+      const mins=Math.round((end-start)/60000);
+      if(mins>0&&mins<24*60)return mins; // sanity check
+    }catch(e){}
+  }
+  return b.duration||0;
+}
 function aCalcStats(bks){
   const res=bks.filter(b=>b.type!=='walkin');
   const wlk=bks.filter(b=>b.type==='walkin');
@@ -2324,12 +2358,12 @@ function aCalcStats(bks){
   const tp=bks.reduce((s,b)=>s+(b.pax||0),0);
   const rp=res.reduce((s,b)=>s+(b.pax||0),0);
   const wp=wlk.reduce((s,b)=>s+(b.pax||0),0);
-  const wd=bks.filter(b=>b.duration>0);
-  const rd=res.filter(b=>b.duration>0);
-  const wd2=wlk.filter(b=>b.duration>0);
-  const ad=wd.length?Math.round(wd.reduce((s,b)=>s+b.duration,0)/wd.length):0;
-  const ard=rd.length?Math.round(rd.reduce((s,b)=>s+b.duration,0)/rd.length):0;
-  const awd=wd2.length?Math.round(wd2.reduce((s,b)=>s+b.duration,0)/wd2.length):0;
+  const durs=bks.map(b=>aEffectiveDuration(b)).filter(d=>d>0);
+  const resDurs=res.map(b=>aEffectiveDuration(b)).filter(d=>d>0);
+  const wlkDurs=wlk.map(b=>aEffectiveDuration(b)).filter(d=>d>0);
+  const ad=durs.length?Math.round(durs.reduce((s,d)=>s+d,0)/durs.length):0;
+  const ard=resDurs.length?Math.round(resDurs.reduce((s,d)=>s+d,0)/resDurs.length):0;
+  const awd=wlkDurs.length?Math.round(wlkDurs.reduce((s,d)=>s+d,0)/wlkDurs.length):0;
   const po=bks.filter(b=>b.preOrder&&b.preOrder.length>0).length;
   const tc={};bks.forEach(b=>{if(b.tableId)tc[b.tableId]=(tc[b.tableId]||0)+1;(b.combos||[]).forEach(c=>{tc[c]=(tc[c]||0)+1;});});
   const top3=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,3);
