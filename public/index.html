@@ -2580,7 +2580,9 @@ function aBuildParty(bks){
   const sz={'1-2':0,'3-4':0,'5-6':0,'7+':0};
   bks.forEach(b=>{const p=b.pax||0;if(p<=2)sz['1-2']++;else if(p<=4)sz['3-4']++;else if(p<=6)sz['5-6']++;else sz['7+']++;});
   const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
-  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:Object.keys(sz).map(k=>k+' pax'),datasets:[{data:Object.values(sz),backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam}}}}}});
+  const partyLabels=Object.keys(sz).map(k=>k+' pax');
+  const partyValues=Object.values(sz);
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:1,index:i}));}}}}}});
 }
 function aBuildRepeat(range,customFrom,customTo){
   let from,today;
@@ -2604,12 +2606,12 @@ function aBuildRepeat(range,customFrom,customTo){
   if(!reps.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No repeat customers in this period</td></tr>';return;}
   tb.innerHTML=reps.map(c=>{const avg=Math.round(c.tp/c.visits);const f=c.visits>=hT?'high':c.visits>=mT?'med':'low';const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';return`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td>${aFmtDate(c.lastVisit)}</td><td>${avg} pax</td><td><span class="badge badge-${f}">${fl}</span></td></tr>`;}).join('');
 }
-let aLastStats=null, aLastRange='today', aLastRepeatData=null, aLastCustomFrom=null, aLastCustomTo=null;
+let aLastStats=null, aLastRange='today', aLastRepeatData=null, aLastCustomFrom=null, aLastCustomTo=null, aLastBks=[];
 function aRender(range,from,to){
   aLastRange=range;
   if(range==='custom'){aLastCustomFrom=from;aLastCustomTo=to;}
   const bks=aGetBookings(range,from,to);const stats=aCalcStats(bks);
-  aLastStats=stats;
+  aLastStats=stats;aLastBks=bks;
   aUpdateCards(stats);const m=aUpdateHeatLegend(range);aRenderHeatMap(stats.tc,m);
   aBuildOverTime(bks,range);aBuildPeak(bks);aBuildParty(bks);
   if(aRepeatRange==='custom'&&aLastRepeatData&&aLastRepeatData.range==='custom'){aBuildRepeat('custom',aLastRepeatData.from,aLastRepeatData.to);}
@@ -2636,33 +2638,156 @@ function applyRepeatCustomRange(){
 }
 function loadAnalytics(){aRender('today');}
 
-// ─── PDF EXPORT ───
+// ─── PDF CHART RENDERING (dark text/colors for white PDF background) ───
+const aPdfTextClr='#374151';
+const aPdfGridClr='#e5e7eb';
+const aPdfFontFam="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+const aPdfLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aPdfTextClr,font:{size:12,family:aPdfFontFam}}};
+const aPdfAxisTick={color:aPdfTextClr,font:{size:11,family:aPdfFontFam}};
+const aPdfAxisGrid={color:aPdfGridClr};
+
+// Groups bookings by date into reservation/walk-in counts for a given period.
+// For long ranges (#9), aggregates by week or month instead of by day.
+function aAggregateByPeriod(bks,from,to){
+  const fromD=new Date(from),toD=new Date(to);
+  const spanDays=Math.round((toD-fromD)/(1000*60*60*24))+1;
+  let unit='day';
+  if(spanDays>120)unit='month';
+  else if(spanDays>35)unit='week';
+
+  const dm={};
+  bks.forEach(b=>{
+    if(!b.date)return;
+    let key;
+    if(unit==='day'){key=b.date;}
+    else if(unit==='week'){
+      const d=new Date(b.date);
+      const dow=d.getDay();
+      const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));
+      key=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
+    } else {
+      key=b.date.slice(0,7); // YYYY-MM
+    }
+    dm[key]=dm[key]||{r:0,w:0};
+    b.type==='walkin'?dm[key].w++:dm[key].r++;
+  });
+  const sortedKeys=Object.keys(dm).sort();
+  const labels=sortedKeys.map(k=>{
+    if(unit==='month'){
+      const[y,mo]=k.split('-');
+      return new Date(parseInt(y),parseInt(mo)-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+    } else if(unit==='week'){
+      return 'Wk of '+aFmtDate(k);
+    }
+    return aFmtDate(k);
+  });
+  return{
+    labels,
+    reservations:sortedKeys.map(k=>dm[k].r),
+    walkins:sortedKeys.map(k=>dm[k].w),
+    unit
+  };
+}
+
+// Builds a Chart.js config (PDF-friendly colors) for a given chart type
+function aPdfChartConfig(type,bks,range,from,to){
+  if(type==='overTime'){
+    const hrs=['11','12','13','14','15','16','17','18','19','20'];
+    let labels,resData,wlkData;
+    if(range==='today'){
+      labels=hrs.map(h=>h+':00');
+      resData=hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length);
+      wlkData=hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length);
+    } else {
+      const agg=aAggregateByPeriod(bks,from,to);
+      labels=agg.labels;resData=agg.reservations;wlkData=agg.walkins;
+    }
+    return{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'Reservations',data:resData,borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
+        {label:'Walk-ins',data:wlkData,borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}
+      ]},
+      options:{responsive:false,animation:false,plugins:{legend:aPdfLegend},scales:{x:{ticks:{...aPdfAxisTick,maxRotation:45,minRotation:labels.length>10?45:0},grid:aPdfAxisGrid},y:{beginAtZero:true,ticks:{...aPdfAxisTick,stepSize:1},grid:aPdfAxisGrid}}}
+    };
+  }
+  if(type==='peak'){
+    const hrs=['11','12','13','14','15','16','17','18','19','20'];
+    return{
+      type:'bar',
+      data:{labels:hrs.map(h=>h+':00'),datasets:[
+        {label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C'},
+        {label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D'}
+      ]},
+      options:{responsive:false,animation:false,plugins:{legend:aPdfLegend},scales:{x:{stacked:true,ticks:aPdfAxisTick,grid:aPdfAxisGrid},y:{stacked:true,beginAtZero:true,ticks:{...aPdfAxisTick,stepSize:1},grid:aPdfAxisGrid}}}
+    };
+  }
+  if(type==='party'){
+    const sz={'1-2':0,'3-4':0,'5-6':0,'7+':0};
+    bks.forEach(b=>{const p=b.pax||0;if(p<=2)sz['1-2']++;else if(p<=4)sz['3-4']++;else if(p<=6)sz['5-6']++;else sz['7+']++;});
+    const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
+    const partyLabels=Object.keys(sz).map(k=>k+' pax');
+    const partyValues=Object.values(sz);
+    return{
+      type:'doughnut',
+      data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:1,borderColor:'#fff'}]},
+      options:{responsive:false,animation:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aPdfTextClr,font:{size:12,family:aPdfFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:1,index:i}));}}}}}
+    };
+  }
+}
+
+// Renders a Chart.js config to an offscreen canvas and returns a PNG dataURL
+function aRenderPdfChart(config,pxW,pxH){
+  return new Promise(resolve=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=pxW;canvas.height=pxH;
+    canvas.style.width=pxW+'px';canvas.style.height=pxH+'px';
+    // Must be in DOM (even if hidden) for Chart.js to size/render correctly
+    canvas.style.position='absolute';canvas.style.left='-9999px';canvas.style.top='0';
+    document.body.appendChild(canvas);
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,pxW,pxH);
+    const chart=new Chart(canvas,{...config,options:{...config.options,responsive:false,animation:false}});
+    // Chart.js renders synchronously when animation:false, but give it a tick to be safe
+    requestAnimationFrame(()=>{
+      const dataUrl=canvas.toDataURL('image/png',1.0);
+      chart.destroy();
+      document.body.removeChild(canvas);
+      resolve(dataUrl);
+    });
+  });
+}
+
 const aRangeLabel={today:'Today',
   '7days':'Last 7 Days','30days':'Last 30 Days','custom':'Custom Range'};
-function exportPDF(){
+async function exportPDF(){
   if(!aLastStats){alert('No data to export yet');return;}
+  showToast('Generating PDF...');
   const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
   const W=210,H=297,m=15;let y=m;
+  const s=aLastStats;
+  const bks=aLastBks||[];
+
+  // Determine date range for this export
+  let rangeFrom,rangeTo;
+  if(aLastRange==='custom'&&aLastCustomFrom&&aLastCustomTo){rangeFrom=aLastCustomFrom;rangeTo=aLastCustomTo;}
+  else if(aLastRange==='7days'){rangeFrom=aDaysAgoStr(7);rangeTo=aTodayStr();}
+  else if(aLastRange==='30days'){rangeFrom=aDaysAgoStr(30);rangeTo=aTodayStr();}
+  else{rangeFrom=aTodayStr();rangeTo=aTodayStr();}
 
   // Header
   doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
   doc.text('Alire — Analytics Report',m,y);y+=8;
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
   let periodText=aRangeLabel[aLastRange]||aLastRange;
-  if(aLastRange==='custom'&&aLastCustomFrom&&aLastCustomTo){
-    periodText=`Custom Range (${aFmtDate(aLastCustomFrom)} – ${aFmtDate(aLastCustomTo)})`;
-  } else if(aLastRange==='today'){
-    periodText=`Today (${aFmtDate(aTodayStr())})`;
-  } else if(aLastRange==='7days'){
-    periodText=`Last 7 Days (${aFmtDate(aDaysAgoStr(7))} – ${aFmtDate(aTodayStr())})`;
-  } else if(aLastRange==='30days'){
-    periodText=`Last 30 Days (${aFmtDate(aDaysAgoStr(30))} – ${aFmtDate(aTodayStr())})`;
-  }
+  if(aLastRange==='custom'){periodText=`Custom Range (${aFmtDate(rangeFrom)} – ${aFmtDate(rangeTo)})`;}
+  else if(aLastRange==='today'){periodText=`Today (${aFmtDate(rangeFrom)})`;}
+  else if(aLastRange==='7days'){periodText=`Last 7 Days (${aFmtDate(rangeFrom)} – ${aFmtDate(rangeTo)})`;}
+  else if(aLastRange==='30days'){periodText=`Last 30 Days (${aFmtDate(rangeFrom)} – ${aFmtDate(rangeTo)})`;}
   doc.text(`Period: ${periodText} | Generated: ${new Date().toLocaleString('en-GB')}`,m,y);y+=10;
   doc.setDrawColor(200,200,200);doc.line(m,y,W-m,y);y+=8;
 
-  const s=aLastStats;
-  // Summary section
+  // ─── Summary ───
   doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   doc.text('Summary',m,y);y+=7;
   doc.setFontSize(10);doc.setFont('helvetica','normal');
@@ -2680,82 +2805,126 @@ function exportPDF(){
     doc.text(lines,m+45,y);
     y+=5*lines.length+1;
   });
-  y+=4;
+  y+=3;
 
-  // ─── Charts as images ───
-  // Renders a chart canvas onto a white-background offscreen canvas, returns dataURL
-  function chartToWhitePNG(canvas){
-    const tmp=document.createElement('canvas');
-    tmp.width=canvas.width;tmp.height=canvas.height;
-    const ctx=tmp.getContext('2d');
-    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,tmp.width,tmp.height);
-    ctx.drawImage(canvas,0,0);
-    return tmp.toDataURL('image/png',1.0);
+  // ─── #8 Key Takeaways / Highlights ───
+  {
+    // Peak hour: hour with highest combined (res+walk) count
+    const hrs=['11','12','13','14','15','16','17','18','19','20'];
+    let peakHour='—',peakCount=0;
+    hrs.forEach(h=>{
+      const c=bks.filter(b=>b.time&&b.time.startsWith(h+':')).length;
+      if(c>peakCount){peakCount=c;peakHour=h+':00';}
+    });
+    // Busiest day (only meaningful for multi-day ranges)
+    let busiestDay=null,busiestDayCount=0;
+    if(aLastRange!=='today'){
+      const dayCounts={};
+      bks.forEach(b=>{if(b.date){dayCounts[b.date]=(dayCounts[b.date]||0)+1;}});
+      Object.entries(dayCounts).forEach(([d,c])=>{if(c>busiestDayCount){busiestDayCount=c;busiestDay=d;}});
+    }
+    const noShowFreeNote=s.t>0?`${Math.round((s.res>0?s.res:0)/s.t*100)}% reservation share`:'';
+    const highlights=[];
+    if(s.top3.length)highlights.push(`Busiest table: ${s.top3.map(([id])=>String(id).startsWith('V')?id:'T'+id).join(', ')} (${s.top3[0][1]} bookings each-ish)`);
+    if(peakCount>0)highlights.push(`Peak hour: ${peakHour} (${peakCount} bookings)`);
+    if(busiestDay)highlights.push(`Busiest day: ${aFmtDate(busiestDay)} (${busiestDayCount} bookings)`);
+    if(s.t>0)highlights.push(`Reservation vs walk-in split: ${s.res} / ${s.wlk}`);
+
+    if(highlights.length){
+      const boxH=6+highlights.length*5.5;
+      doc.setFillColor(250,246,240);doc.roundedRect(m,y,W-2*m,boxH,2,2,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
+      doc.text('Highlights',m+4,y+5);
+      doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+      highlights.forEach((h,i)=>{doc.text('• '+h,m+4,y+10+i*5.5);});
+      y+=boxH+6;
+    }
   }
-  function addChartImage(canvasId, title, maxW, maxH){
-    const canvas=document.getElementById(canvasId);
-    if(!canvas)return;
-    if(y+8+maxH>H-15){doc.addPage();y=m;}
+
+  // ─── Charts (rendered fresh with PDF-friendly dark text) ───
+  async function addChart(type,title,pxW,pxH,mmW,mmH){
+    if(y+8+mmH>H-15){doc.addPage();y=m;}
     doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
     doc.text(title,m,y);y+=5;
     try{
-      const imgData=chartToWhitePNG(canvas);
-      const ratio=canvas.width/canvas.height;
-      let w=maxW,h=w/ratio;
-      if(h>maxH){h=maxH;w=h*ratio;}
-      doc.addImage(imgData,'PNG',m,y,w,h);
-      y+=h+8;
+      const cfg=aPdfChartConfig(type,bks,aLastRange,rangeFrom,rangeTo);
+      const imgData=await aRenderPdfChart(cfg,pxW,pxH);
+      doc.addImage(imgData,'PNG',m,y,mmW,mmH);
+      y+=mmH+8;
     }catch(e){
       doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
       doc.text('(chart unavailable)',m,y);y+=8;
     }
   }
-  addChartImage('chartOverTime','Bookings Over Time',W-2*m,70);
-  addChartImage('chartPeak','Peak Hours',(W-2*m-6)/2,65);
-  // Party chart goes side by side with peak hours - reposition
-  {
-    const canvas=document.getElementById('chartParty');
-    if(canvas){
-      try{
-        const imgData=chartToWhitePNG(canvas);
-        const ratio=canvas.width/canvas.height;
-        const maxW=(W-2*m-6)/2,maxH=65;
-        let w=maxW,h=w/ratio;if(h>maxH){h=maxH;w=h*ratio;}
-        // Position next to peak hours chart (same y as before adding it)
-        const partyY=y-65-8; // align with peak hours chart top
-        doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
-        doc.text('Party Size Distribution',m+(W-2*m)/2+3,partyY-5);
-        doc.addImage(imgData,'PNG',m+(W-2*m)/2+3,partyY,w,h);
-      }catch(e){}
-    }
-  }
-  y+=4;
+  // #6: larger charts. Bookings Over Time full width & taller.
+  await addChart('overTime','Bookings Over Time',1000,400,W-2*m,(W-2*m)*0.4);
 
-  // Table utilization
+  // Peak Hours + Party Size side by side, each larger than before
+  {
+    const halfW=(W-2*m-6)/2;
+    const rowH=75;
+    if(y+8+rowH>H-15){doc.addPage();y=m;}
+    const topY=y;
+    // Peak Hours (left)
+    doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+    doc.text('Peak Hours',m,topY);
+    try{
+      const cfg=aPdfChartConfig('peak',bks,aLastRange,rangeFrom,rangeTo);
+      const imgData=await aRenderPdfChart(cfg,700,560);
+      doc.addImage(imgData,'PNG',m,topY+5,halfW,rowH-5);
+    }catch(e){}
+    // Party Size (right) — #1 fix: title aligned with Peak Hours title, not overlapping chart above
+    const rightX=m+halfW+6;
+    doc.text('Party Size Distribution',rightX,topY);
+    try{
+      const cfg=aPdfChartConfig('party',bks,aLastRange,rangeFrom,rangeTo);
+      const imgData=await aRenderPdfChart(cfg,700,560);
+      doc.addImage(imgData,'PNG',rightX,topY+5,halfW,rowH-5);
+    }catch(e){}
+    y=topY+rowH+8;
+  }
+
+  // ─── #5 Table Utilization, grouped by zone ───
   if(y>H-50){doc.addPage();y=m;}
   doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   doc.text('Table Utilization',m,y);y+=7;
-  doc.setFontSize(9);doc.setFont('helvetica','normal');
-  const tcEntries=Object.entries(s.tc).sort((a,b)=>{
-    const an=String(a[0]),bn=String(b[0]);
-    return an.localeCompare(bn,undefined,{numeric:true});
-  });
-  if(!tcEntries.length){doc.text('No bookings in this period.',m,y);y+=6;}
-  else{
-    let col=0;const colW=(W-2*m)/4;
-    tcEntries.forEach(([id,c])=>{
-      const label=(String(id).startsWith('V')?id:'T'+id)+': '+c;
-      doc.text(label,m+col*colW,y);
-      col++;
-      if(col>=4){col=0;y+=5;}
+  doc.setFontSize(9);
+  if(!Object.keys(s.tc).length){
+    doc.setFont('helvetica','normal');
+    doc.text('No bookings in this period.',m,y);y+=6;
+  } else {
+    const zoneGroups={vip:[],semi:[],indoor:[]};
+    const zoneLabels={vip:'VIP Room',semi:'Semi-Outdoor',indoor:'Indoor'};
+    A_TBLS.forEach(t=>{
+      const count=s.tc[t.id]||0;
+      let zone='indoor';
+      if(t.group.startsWith('vip'))zone='vip';
+      else if(t.group.startsWith('semi'))zone='semi';
+      zoneGroups[zone].push({label:t.label,count});
     });
-    if(col>0)y+=5;
+    Object.entries(zoneGroups).forEach(([zone,tables])=>{
+      const used=tables.filter(t=>t.count>0);
+      if(!used.length)return;
+      if(y>H-15){doc.addPage();y=m;}
+      doc.setFont('helvetica','bold');doc.setTextColor(120,90,60);doc.setFontSize(9);
+      doc.text(zoneLabels[zone],m,y);y+=5;
+      doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+      let col=0;const colW=(W-2*m)/4;
+      used.forEach(t=>{
+        if(y>H-10){doc.addPage();y=m;col=0;}
+        doc.text(`${t.label}: ${t.count}`,m+col*colW,y);
+        col++;
+        if(col>=4){col=0;y+=5;}
+      });
+      if(col>0)y+=5;
+      y+=2;
+    });
   }
-  y+=5;
+  y+=3;
 
-  // Repeat customers
+  // ─── Repeat customers ───
   if(y>H-40){doc.addPage();y=m;}
-  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   let repeatLabel='Last 30 Days';
   if(aLastRepeatData){
     if(aLastRepeatData.range==='1year')repeatLabel='Last 1 Year';
@@ -2786,12 +2955,13 @@ function exportPDF(){
     doc.text('No repeat customers in this period.',m,y);
   }
 
-  // Footer
+  // ─── Footer with page numbers (#7) ───
   const pageCount=doc.internal.getNumberOfPages();
   for(let i=1;i<=pageCount;i++){
     doc.setPage(i);
     doc.setFontSize(8);doc.setTextColor(150,150,150);
     doc.text(`Alire — Sajian Nusantara | Generated by Alire on ${new Date().toLocaleString('en-GB')}`,m,290);
+    doc.text(`Page ${i} of ${pageCount}`,W-m,290,{align:'right'});
   }
 
   doc.save(`Alire-Analytics-${aLastRange}-${aTodayStr()}.pdf`);
