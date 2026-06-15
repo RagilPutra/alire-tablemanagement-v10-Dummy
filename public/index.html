@@ -288,6 +288,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .fl textarea{resize:vertical;min-height:52px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* Autocomplete dropdown */
+.ac-dropdown{position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--bg);border:0.5px solid var(--bd2);border-radius:8px;margin-top:2px;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.ac-dropdown.hidden{display:none}
+.ac-item{padding:8px 10px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ac-item:hover,.ac-item.ac-active{background:var(--bg2)}
+.ac-item .ac-name{font-weight:500;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-item .ac-phone{color:var(--tx2);font-size:11px;flex-shrink:0}
 .rectags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .rectag{font-size:11px;padding:5px 10px;border-radius:20px;border:0.5px solid var(--bd2);cursor:pointer;background:var(--bg2);color:var(--tx2)}
 .rectag.best{border-color:#1D9E75;background:#EAF3DE;color:#27500A;font-weight:500}
@@ -770,15 +777,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
   <div class="modal">
     <div class="mhdr"><div class="mtit" id="res-tit">Add reservation</div><button class="mcls" onclick="closeOv('ov-res')">✕</button></div>
     <div class="two-col">
-      <div class="fl"><label>Guest name <span style="color:#E24B4A">*</span></label><input id="rname" maxlength="30" placeholder="e.g. Santos family (max 30 chars)"/></div>
-      <div class="fl" id="rphone-row"><label>Phone number <span style="color:#E24B4A">*</span></label><input id="rphone" type="tel" maxlength="20" placeholder="e.g. 08123456789"/></div>
+      <div class="fl" style="position:relative"><label>Guest name <span style="color:#E24B4A">*</span></label><input id="rname" maxlength="30" placeholder="e.g. Santos family (max 30 chars)" autocomplete="off"/><div class="ac-dropdown hidden" id="rname-ac"></div></div>
+      <div class="fl" id="rphone-row" style="position:relative"><label>Phone number <span style="color:#E24B4A">*</span></label><input id="rphone" type="tel" maxlength="20" placeholder="e.g. 08123456789" autocomplete="off"/><div class="ac-dropdown hidden" id="rphone-ac"></div></div>
     </div>
     <div class="two-col">
       <div class="fl"><label>Date</label><input type="date" id="rdate" onchange="onRC()"/></div>
       <div class="fl"><label>Time</label><select id="rtime" onchange="onRC()"></select></div>
     </div>
     <div class="two-col">
-      <div class="fl"><label>Party size (pax)</label><input id="rpax" type="number" min="1" max="60" placeholder="# guests" oninput="onRC()"/></div>
+      <div class="fl"><label>Party size (pax)</label><input id="rpax" type="number" min="1" max="500" placeholder="# guests" oninput="onRC()"/></div>
       <div class="fl"><label>Duration</label><select id="rdur">
         <option value="30">30 min</option>
         <option value="60">1 hr</option>
@@ -864,13 +871,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 <div class="ov hidden" id="ov-wi">
   <div class="modal">
     <div class="mhdr"><div class="mtit">Add walk-in</div><button class="mcls" onclick="closeOv('ov-wi')">✕</button></div>
-    <div class="fl"><label>Guest name (optional)</label><input id="winame" placeholder="e.g. Smith"/></div>
+    <div class="two-col">
+      <div class="fl" style="position:relative"><label>Guest name (optional)</label><input id="winame" placeholder="e.g. Smith" autocomplete="off"/><div class="ac-dropdown hidden" id="winame-ac"></div></div>
+      <div class="fl" style="position:relative"><label>Phone (optional)</label><input id="wiphone" type="tel" maxlength="20" placeholder="e.g. 08123456789" autocomplete="off"/><div class="ac-dropdown hidden" id="wiphone-ac"></div></div>
+    </div>
     <div class="wi-time">
       <div><div class="wi-tlbl">Seated at</div><div class="wi-tbig" id="witimedisp">--:--</div></div>
       <div style="font-size:11px;color:var(--tx3);margin-left:4px">(current time)</div>
     </div>
     <div class="two-col">
-      <div class="fl"><label>Party size (pax)</label><input id="wipax" type="number" min="1" max="60" placeholder="# guests" oninput="onWIC()"/></div>
+      <div class="fl"><label>Party size (pax)</label><input id="wipax" type="number" min="1" max="500" placeholder="# guests" oninput="onWIC()"/></div>
       <div class="fl"><label>Duration</label><select id="widur" onchange="chkWIC()">
         <option value="30">30 min</option>
         <option value="60">1 hr</option>
@@ -925,8 +935,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 <div class="ov hidden" id="ov-wl">
   <div class="modal">
     <div class="mhdr"><div class="mtit">Add to waiting list</div><button class="mcls" onclick="closeOv('ov-wl')">✕</button></div>
-    <div class="fl"><label>Guest name</label><input id="wlname" placeholder="e.g. Johnson family"/></div>
-    <div class="fl"><label>Party size (pax)</label><input id="wlpax" type="number" min="1" max="60" placeholder="# guests"/></div>
+    <div class="two-col">
+      <div class="fl" style="position:relative"><label>Guest name</label><input id="wlname" placeholder="e.g. Johnson family" autocomplete="off"/><div class="ac-dropdown hidden" id="wlname-ac"></div></div>
+      <div class="fl" style="position:relative"><label>Phone (optional)</label><input id="wlphone" type="tel" maxlength="20" placeholder="e.g. 08123456789" autocomplete="off"/><div class="ac-dropdown hidden" id="wlphone-ac"></div></div>
+    </div>
+    <div class="fl"><label>Party size (pax)</label><input id="wlpax" type="number" min="1" max="500" placeholder="# guests"/></div>
     <div class="fl"><label>Zone preference</label>
       <select id="wlzone">
         <option value="any">Any zone</option><option value="indoor">Indoor</option>
@@ -1090,9 +1103,10 @@ function initInputs(){
   const t=today();const mx=dk(new Date(new Date().setMonth(new Date().getMonth()+3)));
   const rd=document.getElementById('rdate');rd.min=t;rd.max=mx;rd.value=t;
   buildTOpts(document.getElementById('rtime'),'18:00');
-  document.getElementById('fdate').value=t;document.getElementById('fdate').min=t;document.getElementById('fdate').max=mx;
+  document.getElementById('fdate').value=t;document.getElementById('fdate').max=mx;
   document.getElementById('lpick').value=t;document.getElementById('lpick').min=t;document.getElementById('lpick').max=mx;
   ldate=t;updLDisp();
+  initAutocomplete();
 }
 function buildTOpts(sel,def){
   sel.innerHTML='';
@@ -1440,7 +1454,8 @@ function hasConflict(tid,date,time,excId,duration){
   });
 }
 function nearestB(tid,date){
-  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&!b.endedAt);
+  const isT=date===today();
+  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&(!isT||!b.endedAt));
   if(!rel.length)return null;
   rel.sort((a,b)=>a.time.localeCompare(b.time));
   if(date===today()){
@@ -1471,7 +1486,8 @@ function nearestB(tid,date){
   return rel[0];
 }
 function fStatus(tid,date){
-  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&!b.endedAt);
+  const isT=date===today();
+  const rel=bookings.filter(b=>b.date===date&&allTids(b).includes(String(tid))&&(!isT||!b.endedAt));
   if(!rel.length)return'av';
   // Get the currently active booking (not just count)
   const b=nearestB(tid,date);
@@ -1983,12 +1999,17 @@ function startEdit(id){
   };
   document.getElementById('res-tit').textContent=titles[b.type]||'Edit booking';
   
-  // Hide phone field for walk-in and waiting list
+  // Phone field: visible for reservations (required) and walk-ins (optional); hidden for waiting list
   const phoneRow=document.getElementById('rphone-row');
-  if(b.type==='walkin'||b.type==='waiting'){
+  const phoneLabel=phoneRow.querySelector('label');
+  if(b.type==='waiting'){
     phoneRow.style.display='none';
+  }else if(b.type==='walkin'){
+    phoneRow.style.display='';
+    phoneLabel.innerHTML='Phone number (optional)';
   }else{
     phoneRow.style.display='';
+    phoneLabel.innerHTML='Phone number <span style="color:#E24B4A">*</span>';
   }
   
   document.getElementById('rname').value=b.name||'';document.getElementById('rphone').value=b.phone||'';
@@ -2035,8 +2056,10 @@ function updComboVisibility(tid,pax){
 function openReservation(preTid){
   editId=null;editType=null;rcombo=[];poReset();
   ['rname','rphone','rnotes'].forEach(id=>document.getElementById(id).value='');
-  // Show phone field for new reservations
-  document.getElementById('rphone-row').style.display='';
+  // Show phone field for new reservations (required)
+  const phoneRow=document.getElementById('rphone-row');
+  phoneRow.style.display='';
+  phoneRow.querySelector('label').innerHTML='Phone number <span style="color:#E24B4A">*</span>';
   // Default date to the currently-viewed floor date (reduces human error on future-date bookings)
   document.getElementById('rdate').value=afd();
   document.getElementById('rpax').value='';document.getElementById('rstaff').value='';
@@ -2103,7 +2126,7 @@ async function submitRes(){
 
 /* ── WALK-IN ── */
 function openWalkin(preTid){
-  document.getElementById('winame').value='';document.getElementById('wipax').value='';
+  document.getElementById('winame').value='';document.getElementById('wiphone').value='';document.getElementById('wipax').value='';
   document.getElementById('wifhint').innerHTML='';document.getElementById('wirecs').innerHTML='';
   document.getElementById('wiconflict').classList.remove('show');document.getElementById('widur').value=150;
   wicombo=[];document.getElementById('wicchips').innerHTML='';document.getElementById('wicombosec').style.display='none';
@@ -2151,6 +2174,7 @@ function onWITC(){const p=parseInt(document.getElementById('wipax').value)||0,ti
 async function submitWI(){
   if(chkWIC())return;
   const name=document.getElementById('winame').value.trim()||'Walk-in';
+  const phone=document.getElementById('wiphone').value.trim().slice(0,20);
   const pax=parseInt(document.getElementById('wipax').value)||0,tableId=document.getElementById('witbl').value;
   const duration=parseInt(document.getElementById('widur').value)||150;
   if(!pax){showToast('Please enter party size','error');return;}
@@ -2165,17 +2189,17 @@ async function submitWI(){
       return;
     }
   }
-  try{const cr=await api('/api/bookings',{method:'POST',body:JSON.stringify({tableId,type:'walkin',name,date:today(),time:witime,pax,duration,staff:'',notes:'',babyChairs:0,combos:wicombo,preOrder:[],poNote:''})});bookings.push(cr);closeOv('ov-wi');renderFloor();renderExFloor();if(view==='list')renderList();showToast('Walk-in seated at '+lbl(tableId)+(wicombo.length?' + '+wicombo.map(lbl).join(' + '):'')+' — '+witime);}
+  try{const cr=await api('/api/bookings',{method:'POST',body:JSON.stringify({tableId,type:'walkin',name,phone,date:today(),time:witime,pax,duration,staff:'',notes:'',babyChairs:0,combos:wicombo,preOrder:[],poNote:''})});bookings.push(cr);closeOv('ov-wi');renderFloor();renderExFloor();if(view==='list')renderList();showToast('Walk-in seated at '+lbl(tableId)+(wicombo.length?' + '+wicombo.map(lbl).join(' + '):'')+' — '+witime);}
   catch(e){showToast(e.message,'error');}
 }
 
 /* ── WAITING LIST ── */
-function openAddWL(){document.getElementById('wlname').value='';document.getElementById('wlpax').value='';document.getElementById('wlzone').value='any';document.getElementById('wlnotes').value='';openOv('ov-wl');}
+function openAddWL(){document.getElementById('wlname').value='';document.getElementById('wlphone').value='';document.getElementById('wlpax').value='';document.getElementById('wlzone').value='any';document.getElementById('wlnotes').value='';openOv('ov-wl');}
 async function submitWL(){
-  const name=document.getElementById('wlname').value.trim();const pax=parseInt(document.getElementById('wlpax').value)||0;
+  const name=document.getElementById('wlname').value.trim();const phone=document.getElementById('wlphone').value.trim().slice(0,20);const pax=parseInt(document.getElementById('wlpax').value)||0;
   const zone=document.getElementById('wlzone').value;const notes=document.getElementById('wlnotes').value.trim();
   if(!name){showToast('Please enter guest name','error');return;}if(!pax){showToast('Please enter party size','error');return;}
-  try{const cr=await api('/api/waiting',{method:'POST',body:JSON.stringify({name,pax,zone,notes,addedAt:nowS()})});wlist.push({...cr,showA:false,prim:null,combos:[]});closeOv('ov-wl');renderWL();showToast(name+' added to waiting list');}
+  try{const cr=await api('/api/waiting',{method:'POST',body:JSON.stringify({name,phone,pax,zone,notes,addedAt:nowS()})});wlist.push({...cr,showA:false,prim:null,combos:[]});closeOv('ov-wl');renderWL();showToast(name+' added to waiting list');}
   catch(e){showToast(e.message,'error');}
 }
 async function rmWL(id){try{await api(`/api/waiting/${id}`,{method:'DELETE'});wlist=wlist.filter(x=>x.id!==id);renderWL();}catch(e){showToast(e.message,'error');}}
@@ -2189,7 +2213,7 @@ function wlRmC(wid,cid){const w=wlist.find(x=>x.id===wid);if(!w)return;w.combos=
 async function confirmSeat(wid){
   const w=wlist.find(x=>x.id===wid);if(!w||!w.prim)return;
   try{
-    const cr=await api('/api/bookings',{method:'POST',body:JSON.stringify({tableId:w.prim,type:'walkin',name:w.name,date:today(),time:nowS(),pax:w.pax,duration:150,staff:'',notes:w.notes||'',babyChairs:0,combos:w.combos,preOrder:[],poNote:''})});
+    const cr=await api('/api/bookings',{method:'POST',body:JSON.stringify({tableId:w.prim,type:'walkin',name:w.name,phone:w.phone||'',date:today(),time:nowS(),pax:w.pax,duration:150,staff:'',notes:w.notes||'',babyChairs:0,combos:w.combos,preOrder:[],poNote:''})});
     bookings.push(cr);await api(`/api/waiting/${w.id}`,{method:'DELETE'});
     wlist=wlist.filter(x=>x.id!==wid);renderWL();renderFloor();renderExFloor();if(view==='list')renderList();
     showToast(w.name+' seated at '+[lbl(w.prim),...w.combos.map(lbl)].join(' + '));
@@ -2319,6 +2343,127 @@ function scrollToTop() {
 
 // Boot — check session first
 checkSession();
+// ═══ CUSTOMER AUTOCOMPLETE ═══
+// Builds a name<->phone lookup from existing bookings (most recent wins per key)
+function buildCustomerIndex(){
+  const byPhone={}; // phone -> {name, phone, date}
+  const byName={};  // normalized name -> {name, phone, date}
+  (bookings||[]).forEach(b=>{
+    if(!b.name||!b.phone)return; // need both to be useful for lookup
+    const nm=b.name.trim();
+    const ph=b.phone.trim();
+    if(!nm||!ph)return;
+    const key=nm.toLowerCase();
+    if(!byPhone[ph]||b.date>byPhone[ph].date){byPhone[ph]={name:nm,phone:ph,date:b.date};}
+    if(!byName[key]||b.date>byName[key].date){byName[key]={name:nm,phone:ph,date:b.date};}
+  });
+  return{byPhone,byName,
+    all(){
+      // Unique customers by phone (most recent name per phone)
+      return Object.values(byPhone);
+    }
+  };
+}
+
+let acActiveIdx=-1; // currently highlighted suggestion index (keyboard nav)
+
+function acSearch(query,field){
+  // field: 'name' or 'phone'
+  const idx=buildCustomerIndex();
+  const list=idx.all();
+  const q=query.trim().toLowerCase();
+  if(q.length<2)return[];
+  const matches=list.filter(c=>{
+    if(field==='name')return c.name.toLowerCase().includes(q);
+    return c.phone.toLowerCase().includes(q);
+  });
+  return matches.slice(0,5);
+}
+
+function acRender(dropdownId,items,nameInputId,phoneInputId){
+  const dd=document.getElementById(dropdownId);
+  acActiveIdx=-1;
+  if(!items.length){dd.classList.add('hidden');dd.innerHTML='';return;}
+  dd.innerHTML=items.map((c,i)=>`<div class="ac-item" data-idx="${i}" onmousedown="acSelect('${dropdownId}','${nameInputId}','${phoneInputId}',${i})"><span class="ac-name">${escapeHtml(c.name)}</span><span class="ac-phone">${escapeHtml(c.phone)}</span></div>`).join('');
+  dd.dataset.items=JSON.stringify(items);
+  dd.classList.remove('hidden');
+}
+
+function acSelect(dropdownId,nameInputId,phoneInputId,idx){
+  const dd=document.getElementById(dropdownId);
+  const items=JSON.parse(dd.dataset.items||'[]');
+  const c=items[idx];
+  if(!c)return;
+  document.getElementById(nameInputId).value=c.name;
+  document.getElementById(phoneInputId).value=c.phone;
+  dd.classList.add('hidden');dd.innerHTML='';
+  // Trigger any dependent UI updates
+  document.getElementById(nameInputId).dispatchEvent(new Event('change'));
+}
+
+function acHide(dropdownId){
+  const dd=document.getElementById(dropdownId);
+  if(dd){dd.classList.add('hidden');dd.innerHTML='';}
+}
+
+function acKeyNav(e,dropdownId,nameInputId,phoneInputId){
+  const dd=document.getElementById(dropdownId);
+  if(dd.classList.contains('hidden'))return;
+  const items=dd.querySelectorAll('.ac-item');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    acActiveIdx=Math.min(acActiveIdx+1,items.length-1);
+    items.forEach((it,i)=>it.classList.toggle('ac-active',i===acActiveIdx));
+    items[acActiveIdx].scrollIntoView({block:'nearest'});
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    acActiveIdx=Math.max(acActiveIdx-1,0);
+    items.forEach((it,i)=>it.classList.toggle('ac-active',i===acActiveIdx));
+    items[acActiveIdx].scrollIntoView({block:'nearest'});
+  }else if(e.key==='Enter'){
+    if(acActiveIdx>=0){
+      e.preventDefault();
+      acSelect(dropdownId,nameInputId,phoneInputId,acActiveIdx);
+    }
+  }else if(e.key==='Escape'){
+    acHide(dropdownId);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Wire up a name/phone field pair for autocomplete
+function wireAutocomplete(nameInputId,phoneInputId,nameAcId,phoneAcId){
+  const nameInput=document.getElementById(nameInputId);
+  const phoneInput=document.getElementById(phoneInputId);
+  if(!nameInput||!phoneInput)return;
+
+  nameInput.addEventListener('input',()=>{
+    const items=acSearch(nameInput.value,'name');
+    acRender(nameAcId,items,nameInputId,phoneInputId);
+    acHide(phoneAcId);
+  });
+  nameInput.addEventListener('keydown',e=>acKeyNav(e,nameAcId,nameInputId,phoneInputId));
+  nameInput.addEventListener('blur',()=>setTimeout(()=>acHide(nameAcId),150));
+
+  phoneInput.addEventListener('input',()=>{
+    const items=acSearch(phoneInput.value,'phone');
+    acRender(phoneAcId,items,nameInputId,phoneInputId);
+    acHide(nameAcId);
+  });
+  phoneInput.addEventListener('keydown',e=>acKeyNav(e,phoneAcId,nameInputId,phoneInputId));
+  phoneInput.addEventListener('blur',()=>setTimeout(()=>acHide(phoneAcId),150));
+}
+
+function initAutocomplete(){
+  wireAutocomplete('rname','rphone','rname-ac','rphone-ac');
+  wireAutocomplete('winame','wiphone','winame-ac','wiphone-ac');
+  wireAutocomplete('wlname','wlphone','wlname-ac','wlphone-ac');
+}
+
 // ═══ ANALYTICS ═══
 const A_TBLS=[{id:'V1',label:'VIP 1',group:'vip-right'},{id:'V2',label:'VIP 2',group:'vip-right'},{id:'V3',label:'VIP 3',group:'vip-right'},{id:'V4',label:'VIP 4',group:'vip-left'},{id:'V5',label:'VIP 5',group:'vip-left'},{id:'V6',label:'VIP 6',group:'vip-left'},{id:31,label:'T31',group:'semi-r1-left',rnd:true},{id:32,label:'T32',group:'semi-r1-left',rnd:true},{id:33,label:'T33',group:'semi-r1-left',rnd:true},{id:34,label:'T34',group:'semi-r1-right',rnd:true},{id:35,label:'T35',group:'semi-r1-right',rnd:true},{id:36,label:'T36',group:'semi-r1-right',rnd:true},{id:30,label:'T30',group:'semi-r2-left'},{id:29,label:'T29',group:'semi-r2-left'},{id:28,label:'T28',group:'semi-r2-left'},{id:27,label:'T27',group:'semi-r2-left'},{id:26,label:'T26',group:'semi-r2-right'},{id:25,label:'T25',group:'semi-r2-right'},{id:24,label:'T24',group:'semi-r2-right'},{id:23,label:'T23',group:'semi-r2-right'},{id:12,label:'T12',group:'in-r1a'},{id:11,label:'T11',group:'in-r1a'},{id:10,label:'T10',group:'in-r1a'},{id:9,label:'T9',group:'in-r1a'},{id:8,label:'T8',group:'in-r1b',rnd:true},{id:7,label:'T7',group:'in-r1b',rnd:true},{id:6,label:'T6',group:'in-r1b',rnd:true},{id:5,label:'T5',group:'in-r1c'},{id:4,label:'T4',group:'in-r1c'},{id:3,label:'T3',group:'in-r1c'},{id:2,label:'T2',group:'in-r1c'},{id:1,label:'T1',group:'in-r1c'},{id:13,label:'T13',group:'in-r2a'},{id:14,label:'T14',group:'in-r2a'},{id:15,label:'T15',group:'in-r2a'},{id:16,label:'T16',group:'in-r2a'},{id:17,label:'T17',group:'in-r2a'},{id:18,label:'T18',group:'in-r2b'},{id:19,label:'T19',group:'in-r2b'},{id:20,label:'T20',group:'in-r2b'},{id:21,label:'T21',group:'in-r2b'},{id:22,label:'T22',group:'in-r2b'}];
 let aCharts={};let aRepeatRange='30days';

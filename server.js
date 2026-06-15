@@ -81,6 +81,18 @@ try {
   console.error('Migration error (endedAt):', e);
 }
 
+// Migration: add phone column to waiting table if it doesn't exist yet
+try {
+  const wcols = db.prepare("PRAGMA table_info(waiting)").all();
+  const hasPhone = wcols.some(c => c.name === 'phone');
+  if (!hasPhone) {
+    db.exec(`ALTER TABLE waiting ADD COLUMN phone TEXT DEFAULT ''`);
+    console.log('✅ Migration: added phone column to waiting table');
+  }
+} catch (e) {
+  console.error('Migration error (waiting.phone):', e);
+}
+
 console.log('✓ SQLite database initialized');
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -123,8 +135,8 @@ function validateBooking(data) {
   if (!data.time || !/^\d{2}:\d{2}$/.test(data.time)) {
     errors.push('Valid time is required (HH:MM)');
   }
-  if (!data.pax || typeof data.pax !== 'number' || data.pax < 1 || data.pax > 60) {
-    errors.push('Party size must be between 1 and 60');
+  if (!data.pax || typeof data.pax !== 'number' || data.pax < 1 || data.pax > 500) {
+    errors.push('Party size must be between 1 and 500');
   }
   if (!data.tableId || typeof data.tableId !== 'string') {
     errors.push('Table selection is required');
@@ -240,7 +252,7 @@ app.post('/api/bookings', requireAuth, (req, res) => {
       phone: (data.phone || '').trim().slice(0, 20),
       date: data.date,
       time: data.time,
-      pax: Math.min(60, Math.max(1, parseInt(data.pax))),
+      pax: Math.min(500, Math.max(1, parseInt(data.pax))),
       duration: parseInt(data.duration) || 150,
       staff: (data.staff || '').trim(),
       notes: (data.notes || '').trim().slice(0, 150),
@@ -295,7 +307,7 @@ app.put('/api/bookings/:id', requireAuth, (req, res) => {
       phone: (data.phone || '').trim().slice(0, 20),
       date: data.date,
       time: data.time,
-      pax: Math.min(60, Math.max(1, parseInt(data.pax))),
+      pax: Math.min(500, Math.max(1, parseInt(data.pax))),
       duration: parseInt(data.duration) || 150,
       staff: (data.staff || '').trim(),
       notes: (data.notes || '').trim().slice(0, 150),
@@ -381,20 +393,21 @@ app.get('/api/waiting', requireAuth, (req, res) => {
 
 app.post('/api/waiting', requireAuth, (req, res) => {
   try {
-    const { name, pax, zone, notes, addedAt } = req.body;
+    const { name, phone, pax, zone, notes, addedAt } = req.body;
     
     if (!name || !pax || !addedAt) {
       return res.status(400).json({ error: 'Name, pax, and time are required' });
     }
     
     const stmt = db.prepare(`
-      INSERT INTO waiting (name, pax, zone, notes, addedAt)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO waiting (name, phone, pax, zone, notes, addedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
       name.trim().slice(0, 30),
-      Math.min(60, Math.max(1, parseInt(pax))),
+      (phone || '').trim().slice(0, 20),
+      Math.min(500, Math.max(1, parseInt(pax))),
       zone || '',
       (notes || '').trim().slice(0, 150),
       addedAt
