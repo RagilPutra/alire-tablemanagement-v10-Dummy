@@ -2543,18 +2543,24 @@ function aUpdateHeatLegend(range){
   document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
   return m;
 }
-const aLegClr=(function(){
+function aGetLegClr(){
   const v=getComputedStyle(document.documentElement).getPropertyValue('--tx').trim();
   if(v)return v;
-  // Fallback: detect dark mode directly if CSS var read fails
   return window.matchMedia('(prefers-color-scheme: dark)').matches?'#f5f5f7':'#1a1a1a';
-})();
-if(typeof Chart!=='undefined'){Chart.defaults.color=aLegClr;}
-const aGridClr=getComputedStyle(document.documentElement).getPropertyValue('--bd3').trim()||'#e5e7eb';
+}
+function aGetGridClr(){
+  return getComputedStyle(document.documentElement).getPropertyValue('--bd3').trim()||'#e5e7eb';
+}
 const aFontFam="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
-const aSharedLegend={display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam}}};
-const aAxisTick={color:aLegClr,font:{size:11,family:aFontFam}};
-const aAxisGrid={color:aGridClr};
+function aGetSharedLegend(){
+  return{display:true,position:'top',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aGetLegClr(),font:{size:11,family:aFontFam}}};
+}
+function aGetAxisTick(){
+  return{color:aGetLegClr(),font:{size:11,family:aFontFam}};
+}
+function aGetAxisGrid(){
+  return{color:aGetGridClr()};
+}
 function aBuildOverTime(bks,range){
   if(aCharts.ot){aCharts.ot.destroy();}
   const hrs=['11','12','13','14','15','16','17','18','19','20'];
@@ -2568,12 +2574,14 @@ function aBuildOverTime(bks,range){
     labels=hrs.map(h=>h+':00');
     datasets=[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}];
   }
-  aCharts.ot=new Chart(document.getElementById('chartOverTime'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{ticks:aAxisTick,grid:aAxisGrid},y:{beginAtZero:true,ticks:{...aAxisTick,stepSize:1},grid:aAxisGrid}}}});
+  const axisTick=aGetAxisTick(),axisGrid=aGetAxisGrid();
+  aCharts.ot=new Chart(document.getElementById('chartOverTime'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aGetSharedLegend()},scales:{x:{ticks:{...axisTick,maxRotation:labels.length>10?45:0,minRotation:labels.length>10?45:0},grid:axisGrid},y:{beginAtZero:true,ticks:{...axisTick,stepSize:1},grid:axisGrid}}}});
 }
 function aBuildPeak(bks){
   if(aCharts.pk){aCharts.pk.destroy();}
   const hrs=['11','12','13','14','15','16','17','18','19','20'];
-  aCharts.pk=new Chart(document.getElementById('chartPeak'),{type:'bar',data:{labels:hrs.map(h=>h+':00'),datasets:[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C',borderWidth:0},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aSharedLegend},scales:{x:{stacked:true,ticks:aAxisTick,grid:aAxisGrid},y:{stacked:true,beginAtZero:true,ticks:{...aAxisTick,stepSize:1},grid:aAxisGrid}}}});
+  const axisTick=aGetAxisTick(),axisGrid=aGetAxisGrid();
+  aCharts.pk=new Chart(document.getElementById('chartPeak'),{type:'bar',data:{labels:hrs.map(h=>h+':00'),datasets:[{label:'Reservations',data:hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#60391C',borderWidth:0},{label:'Walk-ins',data:hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length),backgroundColor:'#C5A25D',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:aGetSharedLegend()},scales:{x:{stacked:true,ticks:axisTick,grid:axisGrid},y:{stacked:true,beginAtZero:true,ticks:{...axisTick,stepSize:1},grid:axisGrid}}}});
 }
 function aBuildParty(bks){
   if(aCharts.pt){aCharts.pt.destroy();}
@@ -2582,7 +2590,8 @@ function aBuildParty(bks){
   const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
   const partyLabels=Object.keys(sz).map(k=>k+' pax');
   const partyValues=Object.values(sz);
-  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:aLegClr,font:{size:11,family:aFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:1,index:i}));}}}}}});
+  const legClr=aGetLegClr();
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:legClr,font:{size:11,family:aFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,index:i,fontColor:legClr,color:legClr}));}}}}}});
 }
 function aBuildRepeat(range,customFrom,customTo){
   let from,today;
@@ -2646,48 +2655,6 @@ const aPdfLegend={display:true,position:'top',align:'center',labels:{boxWidth:12
 const aPdfAxisTick={color:aPdfTextClr,font:{size:11,family:aPdfFontFam}};
 const aPdfAxisGrid={color:aPdfGridClr};
 
-// Groups bookings by date into reservation/walk-in counts for a given period.
-// For long ranges (#9), aggregates by week or month instead of by day.
-function aAggregateByPeriod(bks,from,to){
-  const fromD=new Date(from),toD=new Date(to);
-  const spanDays=Math.round((toD-fromD)/(1000*60*60*24))+1;
-  let unit='day';
-  if(spanDays>120)unit='month';
-  else if(spanDays>35)unit='week';
-
-  const dm={};
-  bks.forEach(b=>{
-    if(!b.date)return;
-    let key;
-    if(unit==='day'){key=b.date;}
-    else if(unit==='week'){
-      const d=new Date(b.date);
-      const dow=d.getDay();
-      const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));
-      key=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
-    } else {
-      key=b.date.slice(0,7); // YYYY-MM
-    }
-    dm[key]=dm[key]||{r:0,w:0};
-    b.type==='walkin'?dm[key].w++:dm[key].r++;
-  });
-  const sortedKeys=Object.keys(dm).sort();
-  const labels=sortedKeys.map(k=>{
-    if(unit==='month'){
-      const[y,mo]=k.split('-');
-      return new Date(parseInt(y),parseInt(mo)-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
-    } else if(unit==='week'){
-      return 'Wk of '+aFmtDate(k);
-    }
-    return aFmtDate(k);
-  });
-  return{
-    labels,
-    reservations:sortedKeys.map(k=>dm[k].r),
-    walkins:sortedKeys.map(k=>dm[k].w),
-    unit
-  };
-}
 
 // Builds a Chart.js config (PDF-friendly colors) for a given chart type
 function aPdfChartConfig(type,bks,range,from,to){
@@ -2699,8 +2666,10 @@ function aPdfChartConfig(type,bks,range,from,to){
       resData=hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length);
       wlkData=hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length);
     } else {
-      const agg=aAggregateByPeriod(bks,from,to);
-      labels=agg.labels;resData=agg.reservations;wlkData=agg.walkins;
+      const dm={};bks.forEach(b=>{if(b.date){dm[b.date]=dm[b.date]||{r:0,w:0};b.type==='walkin'?dm[b.date].w++:dm[b.date].r++;}});
+      const sd=Object.keys(dm).sort();
+      labels=sd.map(d=>aFmtDate(d));
+      resData=sd.map(d=>dm[d].r);wlkData=sd.map(d=>dm[d].w);
     }
     return{
       type:'line',
@@ -2708,7 +2677,7 @@ function aPdfChartConfig(type,bks,range,from,to){
         {label:'Reservations',data:resData,borderColor:'#60391C',backgroundColor:'rgba(96,57,28,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
         {label:'Walk-ins',data:wlkData,borderColor:'#C5A25D',backgroundColor:'rgba(197,162,93,0.2)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}
       ]},
-      options:{responsive:false,animation:false,plugins:{legend:aPdfLegend},scales:{x:{ticks:{...aPdfAxisTick,maxRotation:45,minRotation:labels.length>10?45:0},grid:aPdfAxisGrid},y:{beginAtZero:true,ticks:{...aPdfAxisTick,stepSize:1},grid:aPdfAxisGrid}}}
+      options:{responsive:false,animation:false,plugins:{legend:aPdfLegend},scales:{x:{ticks:{...aPdfAxisTick,maxRotation:labels.length>10?45:0,minRotation:labels.length>10?45:0},grid:aPdfAxisGrid},y:{beginAtZero:true,ticks:{...aPdfAxisTick,stepSize:1},grid:aPdfAxisGrid}}}
     };
   }
   if(type==='peak'){
@@ -2825,7 +2794,12 @@ async function exportPDF(){
     }
     const noShowFreeNote=s.t>0?`${Math.round((s.res>0?s.res:0)/s.t*100)}% reservation share`:'';
     const highlights=[];
-    if(s.top3.length)highlights.push(`Busiest table: ${s.top3.map(([id])=>String(id).startsWith('V')?id:'T'+id).join(', ')} (${s.top3[0][1]} bookings each-ish)`);
+    if(s.top3.length){
+      const topCount=s.top3[0][1];
+      const tiedTop=s.top3.filter(([,c])=>c===topCount);
+      const tableNames=tiedTop.map(([id])=>String(id).startsWith('V')?id:'T'+id).join(', ');
+      highlights.push(tiedTop.length>1?`Busiest tables: ${tableNames} (${topCount} bookings each)`:`Busiest table: ${tableNames} (${topCount} bookings)`);
+    }
     if(peakCount>0)highlights.push(`Peak hour: ${peakHour} (${peakCount} bookings)`);
     if(busiestDay)highlights.push(`Busiest day: ${aFmtDate(busiestDay)} (${busiestDayCount} bookings)`);
     if(s.t>0)highlights.push(`Reservation vs walk-in split: ${s.res} / ${s.wlk}`);
@@ -2839,6 +2813,14 @@ async function exportPDF(){
       highlights.forEach((h,i)=>{doc.text('• '+h,m+4,y+10+i*5.5);});
       y+=boxH+6;
     }
+  }
+
+  // ─── Section separator helper ───
+  function addSeparator(){
+    if(y>H-20){doc.addPage();y=m;return;}
+    doc.setDrawColor(225,225,225);doc.setLineWidth(0.3);
+    doc.line(m,y,W-m,y);
+    y+=6;
   }
 
   // ─── Charts (rendered fresh with PDF-friendly dark text) ───
@@ -2857,9 +2839,11 @@ async function exportPDF(){
     }
   }
   // #6: larger charts. Bookings Over Time full width & taller.
+  addSeparator();
   await addChart('overTime','Bookings Over Time',1000,400,W-2*m,(W-2*m)*0.4);
 
   // Peak Hours + Party Size side by side, each larger than before
+  addSeparator();
   {
     const halfW=(W-2*m-6)/2;
     const rowH=75;
@@ -2885,6 +2869,7 @@ async function exportPDF(){
   }
 
   // ─── #5 Table Utilization, grouped by zone ───
+  addSeparator();
   if(y>H-50){doc.addPage();y=m;}
   doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   doc.text('Table Utilization',m,y);y+=7;
@@ -2923,6 +2908,7 @@ async function exportPDF(){
   y+=3;
 
   // ─── Repeat customers ───
+  addSeparator();
   if(y>H-40){doc.addPage();y=m;}
   doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   let repeatLabel='Last 30 Days';
