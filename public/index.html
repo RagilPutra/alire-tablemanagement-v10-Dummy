@@ -93,6 +93,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .heatmap-zone{margin-bottom:20px}
 .heatmap-zone:last-child{margin-bottom:0}
 .zone-title{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.zone-total{font-weight:500;letter-spacing:normal;text-transform:none;color:var(--tx2);font-size:10px;background:var(--bg2);padding:2px 8px;border-radius:10px;margin-left:6px}
 .heat-row{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap}
 .heat-cell{width:58px;height:60px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;border:2px solid transparent}
 .heat-cell.rnd{border-radius:16px}
@@ -616,21 +617,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div class="chart-title">Table Utilization Heat Map</div>
       <div class="heatmap-container">
         <div class="heatmap-zone">
-          <div class="zone-title">VIP Room</div>
+          <div class="zone-title">VIP Room <span class="zone-total" id="hmt-vip"></span></div>
           <div style="display:flex;gap:40px;flex-wrap:wrap">
             <div class="heat-row" id="hm-vip-left"></div>
             <div class="heat-row" id="hm-vip-right"></div>
           </div>
         </div>
         <div class="heatmap-zone">
-          <div class="zone-title">Semi-Outdoor (Smoking)</div>
+          <div class="zone-title">Semi-Outdoor (Smoking) <span class="zone-total" id="hmt-semi"></span></div>
           <div style="display:flex;gap:40px;flex-wrap:wrap">
             <div><div class="heat-row" id="hm-semi-r1-left"></div><div class="heat-row" id="hm-semi-r2-left" style="margin-top:7px"></div></div>
             <div><div class="heat-row" id="hm-semi-r1-right"></div><div class="heat-row" id="hm-semi-r2-right" style="margin-top:7px"></div></div>
           </div>
         </div>
         <div class="heatmap-zone">
-          <div class="zone-title">Indoor</div>
+          <div class="zone-title">Indoor <span class="zone-total" id="hmt-indoor"></span></div>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:7px">
             <div class="heat-row" id="hm-in-r1a"></div>
             <div class="heat-row" id="hm-in-r1b"></div>
@@ -2533,6 +2534,18 @@ function aRenderHeatMap(tc,m){
     const el=document.getElementById('hm-'+g);
     if(el)el.innerHTML=tbls.map(t=>`<div class="heat-cell ${t.rnd?'rnd':''} heat-${aHeatLevel(tc[t.id]||0,m)}" title="${t.label}: ${tc[t.id]||0} booking${(tc[t.id]||0)!==1?'s':''}"><div class="heat-label">${t.label}</div><div class="heat-count">${tc[t.id]||0}</div></div>`).join('');
   });
+  // Zone totals
+  const zoneTotals={vip:0,semi:0,indoor:0};
+  A_TBLS.forEach(t=>{
+    const c=tc[t.id]||0;
+    if(t.group.startsWith('vip'))zoneTotals.vip+=c;
+    else if(t.group.startsWith('semi'))zoneTotals.semi+=c;
+    else zoneTotals.indoor+=c;
+  });
+  const fmtTotal=n=>`${n} booking${n!==1?'s':''}`;
+  const elVip=document.getElementById('hmt-vip');if(elVip)elVip.textContent=fmtTotal(zoneTotals.vip);
+  const elSemi=document.getElementById('hmt-semi');if(elSemi)elSemi.textContent=fmtTotal(zoneTotals.semi);
+  const elIndoor=document.getElementById('hmt-indoor');if(elIndoor)elIndoor.textContent=fmtTotal(zoneTotals.indoor);
 }
 function aUpdateHeatLegend(range){
   let m=1,lb='Today';
@@ -2590,8 +2603,9 @@ function aBuildParty(bks){
   const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
   const partyLabels=Object.keys(sz).map(k=>k+' pax');
   const partyValues=Object.values(sz);
+  const total=partyValues.reduce((a,b)=>a+b,0);
   const legClr=aGetLegClr();
-  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:legClr,font:{size:11,family:aFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,index:i,fontColor:legClr,color:legClr}));}}}}}});
+  aCharts.pt=new Chart(document.getElementById('chartParty'),{type:'doughnut',data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:12,boxHeight:12,padding:12,color:legClr,font:{size:11,family:aFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>{const pct=total>0?Math.round(partyValues[i]/total*100):0;return{text:`${lb} = ${partyValues[i]} (${pct}%)`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:0,index:i,fontColor:legClr,color:legClr};});}}}}}});
 }
 function aBuildRepeat(range,customFrom,customTo){
   let from,today;
@@ -2701,10 +2715,11 @@ function aPdfChartConfig(type,bks,range,from,to){
     const partyColors=['#60391C','#C5A25D','#E07E2E','#12484E'];
     const partyLabels=Object.keys(sz).map(k=>k+' pax');
     const partyValues=Object.values(sz);
+    const partyTotal=partyValues.reduce((a,b)=>a+b,0);
     return{
       type:'doughnut',
       data:{labels:partyLabels,datasets:[{data:partyValues,backgroundColor:partyColors,borderWidth:1,borderColor:'#fff'}]},
-      options:{responsive:false,animation:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:20,boxHeight:20,padding:16,color:aPdfTextClr,font:{size:18,family:aPdfFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>({text:`${lb} = ${partyValues[i]}`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:1,index:i}));}}}}}
+      options:{responsive:false,animation:false,plugins:{legend:{display:true,position:'bottom',align:'center',labels:{boxWidth:20,boxHeight:20,padding:16,color:aPdfTextClr,font:{size:18,family:aPdfFontFam},generateLabels(chart){return partyLabels.map((lb,i)=>{const pct=partyTotal>0?Math.round(partyValues[i]/partyTotal*100):0;return{text:`${lb} = ${partyValues[i]} (${pct}%)`,fillStyle:partyColors[i],strokeStyle:partyColors[i],lineWidth:1,index:i};});}}}}}
     };
   }
 }
@@ -2897,62 +2912,174 @@ async function exportPDF(){
     y=topY+(rowH-5)+8;
   }
 
-  // ─── #5 Table Utilization, grouped by zone ───
-  if(y>H-50){doc.addPage();y=m;}
-  addChartHeader('Table Utilization');
-  doc.setFontSize(9);doc.setTextColor(30,30,30);
-  if(!Object.keys(s.tc).length){
-    doc.setFont('helvetica','normal');
-    doc.text('No bookings in this period.',m,y);y+=6;
-  } else {
-    const zoneGroups={vip:[],semi:[],indoor:[]};
-    const zoneLabels={vip:'VIP Room',semi:'Semi-Outdoor',indoor:'Indoor'};
-    A_TBLS.forEach(t=>{
-      const count=s.tc[t.id]||0;
-      let zone='indoor';
-      if(t.group.startsWith('vip'))zone='vip';
-      else if(t.group.startsWith('semi'))zone='semi';
-      zoneGroups[zone].push({label:t.label,count});
-    });
-    Object.entries(zoneGroups).forEach(([zone,tables])=>{
-      if(!tables.length)return;
-      if(y>H-15){doc.addPage();y=m;}
-      const pad=4;
-      doc.setFont('helvetica','bold');doc.setTextColor(120,90,60);doc.setFontSize(9);
-      doc.text(zoneLabels[zone],m+pad,y);y+=5;
-      doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
-      let col=0;const colW=(W-2*m-pad)/4;
-      tables.forEach(t=>{
-        if(y>H-10){doc.addPage();y=m;col=0;}
-        doc.text(`${t.label}: ${t.count}`,m+pad+col*colW,y);
-        col++;
-        if(col>=4){col=0;y+=5;}
-      });
-      if(col>0)y+=5;
-      y+=2;
-    });
-  }
-  y+=3;
+  // ─── Table Utilization Heat Map (matches live view layout exactly) ───
+  // Always start on a new page for a clean heat map page
+  doc.addPage();y=m;
+  addChartHeader('Table Utilization Heat Map');
 
-  // ─── Repeat customers ───
-  if(y>H-40){doc.addPage();y=m;}
+  // Dynamic heat threshold — same as live view's aUpdateHeatLegend
+  let hmScale=1;
+  if(aLastRange==='7days')hmScale=7;
+  else if(aLastRange==='30days')hmScale=30;
+  else if(aLastRange==='custom')hmScale=15;
+
+  // Heat level → fill color (matching live view's 4 levels)
+  function hmColor(count){
+    if(count===0)return[255,255,255];                 // white
+    if(count<hmScale)return[187,247,208];             // light green
+    if(count<hmScale*2)return[74,222,128];            // green
+    if(count<hmScale*3)return[251,146,60];            // orange
+    return[248,113,113];                              // coral/red
+  }
+  function hmTextColor(count){
+    // Dark text on light colors, light text on saturated colors
+    if(count===0)return[180,180,180];
+    if(count<hmScale)return[22,101,52];
+    return[255,255,255];
+  }
+
+  // Cell dimensions
+  const cellW=12,cellH=12,cellR=2,cellPad=2;
+  const groupGap=6; // gap between sub-groups within a zone
+  const zoneGap=8; // gap between zones
+
+  // Helper: draw a group of cells horizontally, returns width used
+  function drawCellGroup(tbls,tc,startX,startY){
+    tbls.forEach((t,i)=>{
+      const cx=startX+i*(cellW+cellPad);
+      const count=tc[t.id]||0;
+      const[r,g,b]=hmColor(count);
+      const[tr,tg,tb]=hmTextColor(count);
+      // Cell background
+      doc.setFillColor(r,g,b);
+      doc.setDrawColor(220,220,220);doc.setLineWidth(0.2);
+      doc.roundedRect(cx,startY,cellW,cellH,cellR,cellR,'FD');
+      // Label
+      doc.setFontSize(5.5);doc.setFont('helvetica','bold');doc.setTextColor(tr,tg,tb);
+      doc.text(t.label,cx+cellW/2,startY+4.5,{align:'center'});
+      // Count
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+      doc.text(String(count),cx+cellW/2,startY+9,{align:'center'});
+    });
+    return tbls.length*(cellW+cellPad)-cellPad;
+  }
+
+  // Build group map from A_TBLS
+  const hmGroups={};
+  A_TBLS.forEach(t=>{if(!hmGroups[t.group])hmGroups[t.group]=[];hmGroups[t.group].push(t);});
+
+  // Zone totals & grand total
+  let grandTotal=0,grandActive=0;
+  const zoneTotalsHm={vip:0,semi:0,indoor:0};
+  A_TBLS.forEach(t=>{
+    const c=s.tc[t.id]||0;grandTotal+=c;if(c>0)grandActive++;
+    if(t.group.startsWith('vip'))zoneTotalsHm.vip+=c;
+    else if(t.group.startsWith('semi'))zoneTotalsHm.semi+=c;
+    else zoneTotalsHm.indoor+=c;
+  });
+
+  // ── VIP ROOM ──
+  {
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(120,90,60);
+    doc.text(`VIP Room  —  ${zoneTotalsHm.vip} booking${zoneTotalsHm.vip!==1?'s':''}`,m,y);y+=5;
+    // vip-left (V4,V5,V6) | gap | vip-right (V1,V2,V3)
+    const leftW=drawCellGroup(hmGroups['vip-left']||[],s.tc,m,y);
+    drawCellGroup(hmGroups['vip-right']||[],s.tc,m+leftW+groupGap,y);
+    y+=cellH+zoneGap;
+  }
+
+  // ── SEMI-OUTDOOR ──
+  {
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(120,90,60);
+    doc.text(`Semi-Outdoor  —  ${zoneTotalsHm.semi} booking${zoneTotalsHm.semi!==1?'s':''}`,m,y);y+=5;
+    // Row 1: semi-r1-left (T31,T32,T33) | gap | semi-r1-right (T34,T35,T36)
+    const s1lW=drawCellGroup(hmGroups['semi-r1-left']||[],s.tc,m,y);
+    drawCellGroup(hmGroups['semi-r1-right']||[],s.tc,m+s1lW+groupGap,y);
+    y+=cellH+cellPad;
+    // Row 2: semi-r2-left (T30,T29,T28,T27) | gap | semi-r2-right (T26,T25,T24,T23)
+    const s2lW=drawCellGroup(hmGroups['semi-r2-left']||[],s.tc,m,y);
+    drawCellGroup(hmGroups['semi-r2-right']||[],s.tc,m+s2lW+groupGap,y);
+    y+=cellH+zoneGap;
+  }
+
+  // ── INDOOR ──
+  {
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(120,90,60);
+    doc.text(`Indoor  —  ${zoneTotalsHm.indoor} booking${zoneTotalsHm.indoor!==1?'s':''}`,m,y);y+=5;
+    // Row 1: in-r1a (T12,T11,T10,T9) | gap | in-r1b (T8,T7,T6) | gap | in-r1c (T5,T4,T3,T2,T1)
+    const r1aW=drawCellGroup(hmGroups['in-r1a']||[],s.tc,m,y);
+    const r1bW=drawCellGroup(hmGroups['in-r1b']||[],s.tc,m+r1aW+groupGap,y);
+    drawCellGroup(hmGroups['in-r1c']||[],s.tc,m+r1aW+groupGap+r1bW+groupGap,y);
+    y+=cellH+cellPad;
+    // Row 2: in-r2a (T13,T14,T15,T16,T17) | gap | in-r2b (T18,T19,T20,T21,T22)
+    const r2aW=drawCellGroup(hmGroups['in-r2a']||[],s.tc,m,y);
+    drawCellGroup(hmGroups['in-r2b']||[],s.tc,m+r2aW+groupGap,y);
+    y+=cellH+zoneGap;
+  }
+
+  // ── Color legend ──
+  {
+    y+=2;
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+    doc.text('Bookings per table:',m,y+3.5);
+    let lx=m+33;
+    const legendItems=[
+      {label:'0',color:[255,255,255]},
+      {label:`< ${hmScale}`,color:[187,247,208]},
+      {label:`${hmScale}–${hmScale*2-1}`,color:[74,222,128]},
+      {label:`${hmScale*2}–${hmScale*3-1}`,color:[251,146,60]},
+      {label:`${hmScale*3}+`,color:[248,113,113]}
+    ];
+    legendItems.forEach(item=>{
+      doc.setFillColor(item.color[0],item.color[1],item.color[2]);
+      doc.setDrawColor(200,200,200);doc.setLineWidth(0.2);
+      doc.rect(lx,y,5,5,'FD');
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+      doc.text(item.label,lx+6,y+3.5);
+      lx+=6+doc.getTextWidth(item.label)+6;
+    });
+    y+=8;
+  }
+
+  // ── Grand total ──
+  y+=2;
+  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
+  doc.text(`Grand Total: ${grandTotal} booking${grandTotal!==1?'s':''} across ${A_TBLS.length} tables (${grandActive} active)`,m,y);
+  y+=8;
+
+  // ─── Repeat customers (always page 3) ───
+  doc.addPage();y=m;
   let repeatLabel='Last 30 Days';
   if(aLastRepeatData){
     if(aLastRepeatData.range==='1year')repeatLabel='Last 1 Year';
     else if(aLastRepeatData.range==='custom')repeatLabel=`Custom Range (${aFmtDate(aLastRepeatData.from)} – ${aFmtDate(aLastRepeatData.to)})`;
   }
-  addChartHeader('Repeat Customers ('+repeatLabel+')');
+
+  // Page 3 header — same structure as page 1 but teal (#12484E) color
+  {
+    const logoW=42;const logoH=logoW/2.8169;
+    doc.addImage(aLogoDataUrl,'PNG',m,y,logoW,logoH);
+    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(18,72,78); // #12484E
+    doc.text('Repeat Customers',m+logoW+6,y+logoH/2+1.5);
+    y+=logoH+4;
+    // Teal period box
+    doc.setFillColor(18,72,78);doc.roundedRect(m,y,W-2*m,8,2,2,'F');
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text(`Period: ${repeatLabel}  |  Generated: ${new Date().toLocaleString('en-GB')}`,m+4,y+5.5);
+    y+=8+8;
+  }
   if(aLastRepeatData&&aLastRepeatData.reps.length){
     // Column x-positions, fit within m..(W-m) = 15..195
     const colX={name:m+2,phone:m+48,visits:m+85,lastVisit:m+102,avgPax:m+135,freq:m+162};
-    const colDiv=[m+45,m+82,m+99,m+132,m+159]; // vertical separator x-positions (between columns)
-    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setFillColor(245,245,244);
+    const colDiv=[m+45,m+82,m+99,m+132,m+159];
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setFillColor(18,72,78);
     doc.rect(m,y-4,W-2*m,6,'F');
+    doc.setTextColor(255,255,255);
     doc.text('Name',colX.name,y);doc.text('Phone',colX.phone,y);doc.text('Visits',colX.visits,y);doc.text('Last Visit',colX.lastVisit,y);doc.text('Avg Pax',colX.avgPax,y);doc.text('Frequency',colX.freq,y);
-    doc.setDrawColor(225,225,225);doc.setLineWidth(0.2);
+    doc.setDrawColor(18,72,78);doc.setLineWidth(0.2);
     colDiv.forEach(x=>{doc.line(x,y-4,x,y+2);});
     y+=7;
-    doc.setFont('helvetica','normal');
+    doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
     const{hT,mT}=aLastRepeatData;
     aLastRepeatData.reps.forEach(c=>{
       if(y>H-15){doc.addPage();y=m;}
