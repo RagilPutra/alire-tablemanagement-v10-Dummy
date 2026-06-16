@@ -2768,7 +2768,7 @@ async function exportPDF(){
     const logoW=42;
     const logoH=logoW/2.8169;
     // Text on the left, vertically centered with logo
-    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
+    doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
     doc.text('Analytics Report',m,y+logoH/2+1.5);
     // Logo on the right
     doc.addImage(aLogoDataUrl,'PNG',W-m-logoW,y,logoW,logoH);
@@ -2834,7 +2834,7 @@ async function exportPDF(){
   const boxH=Math.max(summaryBoxH,highlightBoxH);
 
   // Summary box (left)
-  doc.setFillColor(245,245,244);doc.roundedRect(summaryX,summaryTopY,halfColW,boxH,2,2,'F');
+  doc.setFillColor(250,246,240);doc.roundedRect(summaryX,summaryTopY,halfColW,boxH,2,2,'F');
   doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
   doc.text('Summary',summaryX+padX,summaryTopY+6);
   doc.setFontSize(9);
@@ -3037,40 +3037,24 @@ async function exportPDF(){
     // Scale note
     doc.setFontSize(7);doc.setFont('helvetica','italic');doc.setTextColor(130,130,130);
     doc.text(`(Scale adjusts based on selected time range: ${hmRangeLabel[aLastRange]||aLastRange})`,hmX,y);
-    y+=6;
+    y+=10;
   }
 
-  // ── Grand total ──
-  y+=2;
-  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
-  doc.text(`Grand Total: ${grandTotal} booking${grandTotal!==1?'s':''} across ${A_TBLS.length} tables (${grandActive} active)`,hmX,y);
-  y+=10;
-
-  // ── Table Activity Summary box ──
+  // ── Table Activity Summary box (includes Grand Total) ──
   {
-    // Compute insights from tc (table count map)
     const tcEntries=A_TBLS.map(t=>({label:t.label,id:t.id,count:s.tc[t.id]||0,zone:t.group.startsWith('vip')?'VIP Room':t.group.startsWith('semi')?'Semi-Outdoor':'Indoor'}));
-
-    // Most used table(s)
     const maxCount=Math.max(...tcEntries.map(t=>t.count));
     const mostUsed=maxCount>0?tcEntries.filter(t=>t.count===maxCount):[];
-
-    // Most used zone
     const zoneNames=['VIP Room','Semi-Outdoor','Indoor'];
     const zoneCounts={'VIP Room':zoneTotalsHm.vip,'Semi-Outdoor':zoneTotalsHm.semi,'Indoor':zoneTotalsHm.indoor};
     const mostUsedZone=zoneNames.reduce((a,b)=>zoneCounts[a]>=zoneCounts[b]?a:b);
-
-    // Unused tables
     const unusedTables=tcEntries.filter(t=>t.count===0);
     const unusedNames=unusedTables.map(t=>t.label);
-
-    // Utilization rate
     const utilizationPct=Math.round(grandActive/A_TBLS.length*100);
-
-    // Avg bookings per active table
     const avgPerActive=grandActive>0?Math.round(grandTotal/grandActive*10)/10:0;
 
     const summaryItems=[
+      {label:'Grand Total',value:`${grandTotal} booking${grandTotal!==1?'s':''} across ${A_TBLS.length} tables (${grandActive} active)`},
       {label:'Most used table',value:mostUsed.length?`${mostUsed.map(t=>t.label).join(', ')} (${maxCount} booking${maxCount!==1?'s':''})` :'—'},
       {label:'Most used zone',value:`${mostUsedZone} (${zoneCounts[mostUsedZone]} bookings)`},
       {label:'Table utilization rate',value:`${grandActive} of ${A_TBLS.length} tables active (${utilizationPct}%)`},
@@ -3082,15 +3066,12 @@ async function exportPDF(){
     const rowHt=6;
     const boxH=boxPad+4+summaryItems.length*rowHt+boxPad;
 
-    // Box
     doc.setFillColor(250,246,240);doc.roundedRect(hmX,y,W-2*m-1,boxH,2,2,'F');
     doc.setDrawColor(235,225,215);doc.setLineWidth(0.2);doc.roundedRect(hmX,y,W-2*m-1,boxH,2,2,'S');
 
-    // Title
     doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
     doc.text('Table Activity Summary',hmX+boxPad,y+boxPad+2);
 
-    // Rows
     doc.setFontSize(8.5);
     summaryItems.forEach(({label,value},i)=>{
       const ry=y+boxPad+7+i*rowHt;
@@ -3115,7 +3096,7 @@ async function exportPDF(){
   {
     const logoW=42;const logoH=logoW/2.8169;
     // Text on the left, vertically centered with logo
-    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(18,72,78);
+    doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(18,72,78);
     doc.text('Repeat Customers',m,y+logoH/2+1.5);
     // Logo on the right
     doc.addImage(aLogoDataUrl,'PNG',W-m-logoW,y,logoW,logoH);
