@@ -2765,12 +2765,10 @@ async function exportPDF(){
 
   // Header — text left, logo right
   {
-    const logoW=42;
+    const logoW=35.7; // 42 * 0.85 = 15% smaller
     const logoH=logoW/2.8169;
-    // Text on the left, vertically centered with logo
     doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
     doc.text('Analytics Report',m,y+logoH/2+1.5);
-    // Logo on the right
     doc.addImage(aLogoDataUrl,'PNG',W-m-logoW,y,logoW,logoH);
     y+=logoH+4;
   }
@@ -2835,7 +2833,7 @@ async function exportPDF(){
 
   // Summary box (left)
   doc.setFillColor(250,246,240);doc.roundedRect(summaryX,summaryTopY,halfColW,boxH,2,2,'F');
-  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(92,61,30);
   doc.text('Summary',summaryX+padX,summaryTopY+6);
   doc.setFontSize(9);
   rows.forEach(([lb,val],i)=>{
@@ -3033,8 +3031,8 @@ async function exportPDF(){
       doc.text(item.label,lx+6,y+3.5);
       lx+=6+doc.getTextWidth(item.label)+6;
     });
-    y+=7;
-    // Scale note
+    y+=9;
+    // Scale note — extra spacing to avoid overlapping legend
     doc.setFontSize(7);doc.setFont('helvetica','italic');doc.setTextColor(130,130,130);
     doc.text(`(Scale adjusts based on selected time range: ${hmRangeLabel[aLastRange]||aLastRange})`,hmX,y);
     y+=10;
@@ -3054,7 +3052,7 @@ async function exportPDF(){
     const avgPerActive=grandActive>0?Math.round(grandTotal/grandActive*10)/10:0;
 
     const summaryItems=[
-      {label:'Grand Total',value:`${grandTotal} booking${grandTotal!==1?'s':''} across ${A_TBLS.length} tables (${grandActive} active)`},
+      {label:'Grand Total',value:`${grandTotal} booking${grandTotal!==1?'s':''}`},
       {label:'Most used table',value:mostUsed.length?`${mostUsed.map(t=>t.label).join(', ')} (${maxCount} booking${maxCount!==1?'s':''})` :'—'},
       {label:'Most used zone',value:`${mostUsedZone} (${zoneCounts[mostUsedZone]} bookings)`},
       {label:'Table utilization rate',value:`${grandActive} of ${A_TBLS.length} tables active (${utilizationPct}%)`},
@@ -3094,7 +3092,7 @@ async function exportPDF(){
 
   // Page 3 header — text left, logo right, teal (#12484E) color
   {
-    const logoW=42;const logoH=logoW/2.8169;
+    const logoW=35.7;const logoH=logoW/2.8169;
     // Text on the left, vertically centered with logo
     doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(18,72,78);
     doc.text('Repeat Customers',m,y+logoH/2+1.5);
