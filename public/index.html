@@ -726,10 +726,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     </div>
 
     <div class="chart-section">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
         <span style="font-size:12px;color:var(--tx2)">Sort by:</span>
-        <button class="time-btn" id="msort-since" onclick="setMemberSort('since')" style="padding:4px 10px;font-size:11px">Member Since</button>
-        <button class="time-btn active" id="msort-visits" onclick="setMemberSort('visits')" style="padding:4px 10px;font-size:11px">Total Visits</button>
+        <select id="msort-select" onchange="setMemberSort(this.value)" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
+          <option value="visits" selected>Total Visits</option>
+          <option value="since">Member Since</option>
+        </select>
       </div>
       <table class="repeat-table">
         <thead><tr><th>Name</th><th>Phone</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th></th></tr></thead>
@@ -779,7 +781,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div class="mhdr"><div class="mtit">Remove Member</div><button class="mcls" onclick="closeOv('ov-removemember')">✕</button></div>
       <div class="cbanner cbdanger" id="rm-banner" style="margin-bottom:12px"></div>
       <div class="fl" style="position:relative">
-        <label>Manager password</label>
+        <label>Admin & Manager Password</label>
         <div style="position:relative">
           <input id="rmPassword" type="password" placeholder="Enter password" style="padding-right:38px">
           <button type="button" onclick="toggleRmPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="rmPwToggle">👁</button>
@@ -2661,8 +2663,6 @@ function applyMemberCustomRange(){
 }
 function setMemberSort(s){
   memberSort=s;
-  document.getElementById('msort-since').classList.toggle('active',s==='since');
-  document.getElementById('msort-visits').classList.toggle('active',s==='visits');
   renderMembers();
 }
 
@@ -3418,7 +3418,16 @@ async function exportPDF(){
       if(y>H-15){doc.addPage();y=m;}
       const avg=Math.round(c.tp/c.visits);
       const fl=c.visits>=hT?'High':c.visits>=mT?'Medium':'Low';
-      doc.text(String(c.name).substring(0,20),colX.name,y);
+      const isMember=members.some(mm=>mm.phone===c.phone);
+      const nameTrunc=String(c.name).substring(0,20);
+      doc.setTextColor(30,30,30);
+      doc.text(nameTrunc,colX.name,y);
+      if(isMember){
+        const nameW=doc.getTextWidth(nameTrunc);
+        doc.setTextColor(197,162,93); // gold
+        doc.text('\u2605',colX.name+nameW+2,y); // ★
+        doc.setTextColor(30,30,30);
+      }
       doc.text(String(c.phone).substring(0,16),colX.phone,y);
       doc.text(String(c.visits),colX.visits,y);
       doc.text(aFmtDate(c.lastVisit),colX.lastVisit,y);
