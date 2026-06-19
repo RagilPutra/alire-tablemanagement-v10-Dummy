@@ -67,6 +67,13 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);
   CREATE INDEX IF NOT EXISTS idx_bookings_type ON bookings(type);
+
+  CREATE TABLE IF NOT EXISTS members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL UNIQUE,
+    memberSince TEXT NOT NULL,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration: add endedAt column if it doesn't exist yet (for existing databases)
@@ -435,6 +442,84 @@ app.delete('/api/waiting/:id', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Delete waiting entry error:', error);
     res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+// ── Membership routes ─────────────────────────────────────────────────────────
+const MEMBER_REMOVE_PASSWORD = 'americano';
+
+app.get('/api/members', requireAuth, (req, res) => {
+  try {
+    const members = db.prepare('SELECT * FROM members ORDER BY memberSince DESC').all();
+    res.json(members);
+  } catch (error) {
+    console.error('Get members error:', error);
+    res.status(500).json({ error: 'Failed to fetch members' });
+  }
+});
+
+app.post('/api/members', requireAuth, (req, res) => {
+  try {
+    const { phone, memberSince } = req.body;
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'Phone number is required' });
+    }
+    if (!memberSince) {
+      return res.status(400).json({ error: 'Member since date is required' });
+    }
+    const cleanPhone = phone.trim().slice(0, 20);
+
+    const existing = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
+    if (existing) {
+      return res.status(409).json({ error: `This number is already a member (since ${existing.memberSince}).`, existing });
+    }
+
+    const stmt = db.prepare('INSERT INTO members (phone, memberSince) VALUES (?, ?)');
+    const result = stmt.run(cleanPhone, memberSince);
+    const newMember = db.prepare('SELECT * FROM members WHERE id = ?').get(result.lastInsertRowid);
+    res.json(newMember);
+  } catch (error) {
+    console.error('Create member error:', error);
+    res.status(500).json({ error: 'Failed to add member' });
+  }
+});
+
+app.put('/api/members/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { memberSince } = req.body;
+    if (!memberSince) {
+      return res.status(400).json({ error: 'Member since date is required' });
+    }
+    const stmt = db.prepare('UPDATE members SET memberSince = ? WHERE id = ?');
+    const result = stmt.run(memberSince, id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    const updated = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
+    res.json(updated);
+  } catch (error) {
+    console.error('Update member error:', error);
+    res.status(500).json({ error: 'Failed to update member' });
+  }
+});
+
+app.delete('/api/members/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    const stmt = db.prepare('DELETE FROM members WHERE id = ?');
+    const result = stmt.run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Delete member error:', error);
+    res.status(500).json({ error: 'Failed to remove member' });
   }
 });
 
