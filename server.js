@@ -70,10 +70,39 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
+    birthday TEXT,
     memberSince TEXT NOT NULL,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    discountPct REAL NOT NULL,
+    minPurchase REAL NOT NULL DEFAULT 0,
+    maxDiscount REAL NOT NULL DEFAULT 0,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    memberPhone TEXT NOT NULL,
+    memberName TEXT NOT NULL,
+    billAmount REAL NOT NULL,
+    promoId INTEGER,
+    promoCode TEXT,
+    discountAmount REAL NOT NULL DEFAULT 0,
+    finalAmount REAL NOT NULL,
+    notes TEXT,
+    date TEXT NOT NULL,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_transactions_phone ON transactions(memberPhone);
+  CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 `);
 
 // Migration: add endedAt column if it doesn't exist yet (for existing databases)
@@ -98,6 +127,30 @@ try {
   }
 } catch (e) {
   console.error('Migration error (waiting.phone):', e);
+}
+
+// Migration: add name column to members table if it doesn't exist yet
+try {
+  const mcols = db.prepare("PRAGMA table_info(members)").all();
+  const hasName = mcols.some(c => c.name === 'name');
+  if (!hasName) {
+    db.exec(`ALTER TABLE members ADD COLUMN name TEXT DEFAULT ''`);
+    console.log('✅ Migration: added name column to members table');
+  }
+} catch (e) {
+  console.error('Migration error (members.name):', e);
+}
+
+// Migration: add birthday column to members table if it doesn't exist yet
+try {
+  const bcols = db.prepare("PRAGMA table_info(members)").all();
+  const hasBirthday = bcols.some(c => c.name === 'birthday');
+  if (!hasBirthday) {
+    db.exec(`ALTER TABLE members ADD COLUMN birthday TEXT DEFAULT NULL`);
+    console.log('✅ Migration: added birthday column to members table');
+  }
+} catch (e) {
+  console.error('Migration error (members.birthday):', e);
 }
 
 console.log('✓ SQLite database initialized');
@@ -460,13 +513,20 @@ app.get('/api/members', requireAuth, (req, res) => {
 
 app.post('/api/members', requireAuth, (req, res) => {
   try {
-    const { phone, memberSince } = req.body;
+    const { name, phone, birthday, memberSince } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
     if (!phone || !phone.trim()) {
       return res.status(400).json({ error: 'Phone number is required' });
+    }
+    if (!birthday) {
+      return res.status(400).json({ error: 'Birthday is required' });
     }
     if (!memberSince) {
       return res.status(400).json({ error: 'Member since date is required' });
     }
+    const cleanName = name.trim().slice(0, 30);
     const cleanPhone = phone.trim().slice(0, 20);
 
     const existing = db.prepare('SELECT * FROM members WHERE phone = ?').get(cleanPhone);
@@ -474,8 +534,8 @@ app.post('/api/members', requireAuth, (req, res) => {
       return res.status(409).json({ error: `This number is already a member (since ${existing.memberSince}).`, existing });
     }
 
-    const stmt = db.prepare('INSERT INTO members (phone, memberSince) VALUES (?, ?)');
-    const result = stmt.run(cleanPhone, memberSince);
+    const stmt = db.prepare('INSERT INTO members (name, phone, birthday, memberSince) VALUES (?, ?, ?, ?)');
+    const result = stmt.run(cleanName, cleanPhone, birthday, memberSince);
     const newMember = db.prepare('SELECT * FROM members WHERE id = ?').get(result.lastInsertRowid);
     res.json(newMember);
   } catch (error) {
@@ -487,15 +547,60 @@ app.post('/api/members', requireAuth, (req, res) => {
 app.put('/api/members/:id', requireAuth, (req, res) => {
   try {
     const { id } = req.params;
-    const { memberSince } = req.body;
-    if (!memberSince) {
-      return res.status(400).json({ error: 'Member since date is required' });
-    }
-    const stmt = db.prepare('UPDATE members SET memberSince = ? WHERE id = ?');
-    const result = stmt.run(memberSince, id);
-    if (result.changes === 0) {
+    const { name, phone, birthday, memberSince, password, confirmMerge } = req.body;
+
+    const existing = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
+    if (!existing) {
       return res.status(404).json({ error: 'Member not found' });
     }
+
+    const cleanName = (name !== undefined ? name : existing.name).trim().slice(0, 30);
+    const cleanPhone = (phone !== undefined ? phone : existing.phone).trim().slice(0, 20);
+    const newBirthday = birthday !== undefined ? birthday : existing.birthday;
+    const newMemberSince = memberSince !== undefined ? memberSince : existing.memberSince;
+
+    const protectedChanged = cleanName !== existing.name || cleanPhone !== existing.phone || newBirthday !== existing.birthday;
+
+    if (protectedChanged) {
+      if (password !== MEMBER_REMOVE_PASSWORD) {
+        return res.status(403).json({ error: 'Incorrect password' });
+      }
+      if (!cleanName) return res.status(400).json({ error: 'Name is required' });
+      if (!cleanPhone) return res.status(400).json({ error: 'Phone number is required' });
+      if (!newBirthday) return res.status(400).json({ error: 'Birthday is required' });
+    }
+
+    if (!newMemberSince) {
+      return res.status(400).json({ error: 'Member since date is required' });
+    }
+
+    const phoneChanged = cleanPhone !== existing.phone;
+
+    if (phoneChanged) {
+      // Phone must remain unique across members
+      const conflict = db.prepare('SELECT * FROM members WHERE phone = ? AND id != ?').get(cleanPhone, id);
+      if (conflict) {
+        return res.status(409).json({ error: `This number is already used by member "${conflict.name}".` });
+      }
+      // Check if the new phone already has booking history under a different name — needs explicit merge confirmation
+      const existingBookingsUnderNewPhone = db.prepare(
+        "SELECT DISTINCT name FROM bookings WHERE phone = ? AND name IS NOT NULL AND name != ''"
+      ).all(cleanPhone);
+      const differentNames = existingBookingsUnderNewPhone.filter(r => r.name !== cleanName);
+      if (differentNames.length > 0 && !confirmMerge) {
+        return res.status(409).json({
+          error: `This phone number already has booking history under the name "${differentNames[0].name}". Merging will combine both histories.`,
+          needsMergeConfirm: true,
+          existingName: differentNames[0].name
+        });
+      }
+      // Re-link all bookings from old phone to new phone, so visit history (and milestones) carry over
+      db.prepare('UPDATE bookings SET phone = ? WHERE phone = ?').run(cleanPhone, existing.phone);
+    }
+
+    db.prepare('UPDATE members SET name = ?, phone = ?, birthday = ?, memberSince = ? WHERE id = ?')
+      .run(cleanName, cleanPhone, newBirthday, newMemberSince, id);
+
     const updated = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
@@ -520,6 +625,140 @@ app.delete('/api/members/:id', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Delete member error:', error);
     res.status(500).json({ error: 'Failed to remove member' });
+  }
+});
+
+// ── Promotions routes ─────────────────────────────────────────────────────────
+app.get('/api/promotions', requireAuth, (req, res) => {
+  try {
+    const promos = db.prepare('SELECT * FROM promotions ORDER BY createdAt DESC').all();
+    res.json(promos);
+  } catch (error) {
+    console.error('Get promotions error:', error);
+    res.status(500).json({ error: 'Failed to fetch promotions' });
+  }
+});
+
+app.post('/api/promotions', requireAuth, (req, res) => {
+  try {
+    const { code, name, discountPct, minPurchase, maxDiscount, password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    if (!code || !code.trim()) {
+      return res.status(400).json({ error: 'Promo code is required' });
+    }
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Promo name is required' });
+    }
+    const pct = parseFloat(discountPct);
+    if (isNaN(pct) || pct <= 0 || pct > 100) {
+      return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
+    }
+    const min = parseFloat(minPurchase) || 0;
+    const max = parseFloat(maxDiscount) || 0;
+    const cleanCode = code.trim().toUpperCase().slice(0, 20);
+    const cleanName = name.trim().slice(0, 50);
+
+    const existing = db.prepare('SELECT * FROM promotions WHERE code = ?').get(cleanCode);
+    if (existing) {
+      return res.status(409).json({ error: `Promo code "${cleanCode}" already exists.` });
+    }
+
+    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount) VALUES (?, ?, ?, ?, ?)');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max);
+    const newPromo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(result.lastInsertRowid);
+    res.json(newPromo);
+  } catch (error) {
+    console.error('Create promotion error:', error);
+    res.status(500).json({ error: 'Failed to add promotion' });
+  }
+});
+
+app.delete('/api/promotions/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    const stmt = db.prepare('DELETE FROM promotions WHERE id = ?');
+    const result = stmt.run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Promotion not found' });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Delete promotion error:', error);
+    res.status(500).json({ error: 'Failed to remove promotion' });
+  }
+});
+
+// ── Transactions routes ───────────────────────────────────────────────────────
+app.get('/api/transactions', requireAuth, (req, res) => {
+  try {
+    const txns = db.prepare('SELECT * FROM transactions ORDER BY date DESC, createdAt DESC').all();
+    res.json(txns);
+  } catch (error) {
+    console.error('Get transactions error:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+});
+
+app.post('/api/transactions', requireAuth, (req, res) => {
+  try {
+    const { phone, billAmount, promoId, notes, date } = req.body;
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'Member is required' });
+    }
+    const member = db.prepare('SELECT * FROM members WHERE phone = ?').get(phone.trim());
+    if (!member) {
+      return res.status(404).json({ error: 'This phone number is not a registered member' });
+    }
+
+    const bill = parseFloat(billAmount);
+    if (isNaN(bill) || bill <= 0) {
+      return res.status(400).json({ error: 'A valid bill amount is required' });
+    }
+
+    let discountAmount = 0;
+    let promoCode = null;
+    let resolvedPromoId = null;
+
+    if (promoId) {
+      const promo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(promoId);
+      if (!promo) {
+        return res.status(404).json({ error: 'Selected promotion no longer exists' });
+      }
+      if (bill < promo.minPurchase) {
+        return res.status(400).json({ error: `Bill amount is below the minimum purchase (Rp ${promo.minPurchase.toLocaleString('id-ID')}) for this promo` });
+      }
+      let calcDiscount = bill * (promo.discountPct / 100);
+      if (promo.maxDiscount > 0 && calcDiscount > promo.maxDiscount) {
+        calcDiscount = promo.maxDiscount;
+      }
+      discountAmount = Math.round(calcDiscount);
+      promoCode = promo.code;
+      resolvedPromoId = promo.id;
+    }
+
+    const finalAmount = Math.max(0, bill - discountAmount);
+    const txnDate = date || new Date().toISOString().slice(0, 10);
+
+    const stmt = db.prepare(`
+      INSERT INTO transactions (memberPhone, memberName, billAmount, promoId, promoCode, discountAmount, finalAmount, notes, date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      member.phone, member.name, bill, resolvedPromoId, promoCode, discountAmount, finalAmount,
+      (notes || '').trim().slice(0, 200), txnDate
+    );
+    const newTxn = db.prepare('SELECT * FROM transactions WHERE id = ?').get(result.lastInsertRowid);
+    res.json(newTxn);
+  } catch (error) {
+    console.error('Create transaction error:', error);
+    res.status(500).json({ error: 'Failed to record transaction' });
   }
 });
 

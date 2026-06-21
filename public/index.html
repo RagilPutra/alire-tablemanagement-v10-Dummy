@@ -244,6 +244,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .btn-pdf:hover{opacity:.88}
 .btn-export{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;background:var(--brand);color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font)}
 .btn-export:hover{opacity:.88}
+.btn-newtx{display:flex;align-items:center;gap:6px;padding:10px 20px;border-radius:9px;background:#12484E;color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);box-shadow:0 2px 6px rgba(18,72,78,.3)}
+.btn-newtx:hover{opacity:.9}
+.btn-newtx:before{content:'💳';font-size:13px}
 .rl-sum{font-size:12px;color:var(--tx2);padding:8px 16px;background:var(--bg2);border-bottom:0.5px solid var(--bd3);display:flex;gap:16px;flex-wrap:wrap}
 .rl-body{padding:16px;display:flex;flex-direction:column;gap:14px}
 .rl-empty{font-size:14px;color:var(--tx3);text-align:center;padding:40px 0}
@@ -517,6 +520,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     <button class="vtab" id="tab-list" onclick="switchView('list')">Reservation list</button>
     <button class="vtab" id="tab-analytics" onclick="switchView('analytics')">Analytics</button>
     <button class="vtab" id="tab-membership" onclick="switchView('membership')">Membership</button>
+    <button class="vtab" id="tab-transactions" onclick="switchView('transactions')">Transactions</button>
   </div>
 
   <!-- FLOOR VIEW -->
@@ -704,7 +708,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           Excel
         </button>
         <button class="btn-pdf" onclick="openAddMember()">+ Add Member</button>
+        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
       </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-value" id="m-total">0</div><div class="sum-label">Total Members</div><div class="sum-sub" id="m-total-sub">all time</div></div>
+      <div class="sum-card"><div class="sum-value" id="m-comeback">—</div><div class="sum-label">Avg Comeback Rate</div><div class="sum-sub" id="m-comeback-sub">—</div></div>
     </div>
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -733,10 +743,155 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <option value="since">Member Since</option>
         </select>
       </div>
-      <table class="repeat-table">
-        <thead><tr><th>Name</th><th>Phone</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th></th></tr></thead>
-        <tbody id="member-tbody"><tr><td colspan="7" class="empty-state">No members yet</td></tr></tbody>
-      </table>
+      <div style="max-height:500px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+        <table class="repeat-table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Birthday</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th>Total Spending</th></tr></thead>
+          <tbody id="member-tbody"><tr><td colspan="8" class="empty-state">No members yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+        <div class="chart-title" style="margin:0">Promotions</div>
+        <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
+      </div>
+      <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+        <table class="repeat-table">
+          <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th></th></tr></thead>
+          <tbody id="promo-tbody"><tr><td colspan="6" class="empty-state">No promotions yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS VIEW -->
+  <div id="vtransactions" class="analytics-panel hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
+      <div style="font-size:18px;font-weight:600">Transaction History</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn-export" onclick="exportTransactionsExcel()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Excel
+        </button>
+        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-value" id="tx-total">0</div><div class="sum-label">Total Transactions</div><div class="sum-sub" id="tx-total-sub">—</div></div>
+      <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">after discounts</div></div>
+      <div class="sum-card"><div class="sum-value" id="tx-discount">Rp 0</div><div class="sum-label">Total Discounts Given</div><div class="sum-sub" id="tx-discount-sub">—</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <div class="time-selector" style="margin:0">
+        <button class="time-btn" onclick="selectTxTime(this,'today')">Today</button>
+        <button class="time-btn" onclick="selectTxTime(this,'7days')">Last 7 Days</button>
+        <button class="time-btn active" onclick="selectTxTime(this,'30days')">Last 30 Days</button>
+        <button class="time-btn" onclick="selectTxTime(this,'1year')">This Year</button>
+        <button class="time-btn" onclick="selectTxTime(this,'custom')">Custom Range</button>
+      </div>
+      <input type="text" id="txSearch" placeholder="Search name or phone..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
+    </div>
+
+    <div class="custom-range" id="txCustomRange">
+      <label>From:</label><input type="date" id="txDateFrom">
+      <label>To:</label><input type="date" id="txDateTo">
+      <button class="btn-apply" onclick="applyTxCustomRange()">Apply</button>
+    </div>
+
+    <div class="chart-section">
+      <div style="max-height:550px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+        <table class="repeat-table">
+          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Bill Amount</th><th>Promo</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
+          <tbody id="tx-tbody"><tr><td colspan="8" class="empty-state">No transactions yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER DETAIL MODAL -->
+  <div class="ov hidden" id="ov-memberdetail">
+    <div class="modal" style="max-width:560px">
+      <div class="mhdr"><div class="mtit">Member Detail</div><button class="mcls" onclick="closeOv('ov-memberdetail')">✕</button></div>
+      <div style="padding:20px 22px 22px">
+
+        <div id="md-profile" style="background:linear-gradient(135deg,var(--brand) 0%,#7a5028 100%);border-radius:12px;padding:20px 22px;color:#fff;margin-bottom:18px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-30%;right:-10%;width:160px;height:160px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+          <div id="md-name" style="font-size:20px;font-weight:700;margin-bottom:3px;position:relative"></div>
+          <div id="md-phone" style="font-size:13px;opacity:.85;position:relative"></div>
+          <div style="display:flex;gap:22px;margin-top:14px;position:relative;flex-wrap:wrap">
+            <div style="font-size:12px;opacity:.9">Birthday<b id="md-birthday" style="display:block;font-size:13px;font-weight:600;margin-top:1px"></b></div>
+            <div style="font-size:12px;opacity:.9">Member Since<b id="md-since" style="display:block;font-size:13px;font-weight:600;margin-top:1px"></b></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+          <div style="background:var(--bg2);border-radius:10px;padding:12px 10px;text-align:center">
+            <div id="md-visits" style="font-size:19px;font-weight:700;color:var(--tx)"></div>
+            <div style="font-size:10px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Visits</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:10px;padding:12px 10px;text-align:center">
+            <div id="md-lastvisit" style="font-size:19px;font-weight:700;color:var(--tx)"></div>
+            <div style="font-size:10px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Last Visit</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:10px;padding:12px 10px;text-align:center">
+            <div id="md-avgpax" style="font-size:19px;font-weight:700;color:var(--tx)"></div>
+            <div style="font-size:10px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Avg Pax</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:10px;padding:12px 10px;text-align:center">
+            <div id="md-spend" style="font-size:14px;font-weight:700;color:var(--tx)"></div>
+            <div id="md-spend-label" style="font-size:10px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Spend</div>
+          </div>
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+          <span>Transaction History</span>
+          <span id="md-tx-count" style="font-size:11px;font-weight:500;color:var(--tx2);background:var(--bg2);padding:2px 8px;border-radius:10px"></span>
+        </div>
+        <div style="max-height:260px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:10px;margin-bottom:20px" id="md-tx-list"></div>
+
+        <div style="display:flex;gap:10px">
+          <button class="ied" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="editMemberFromDetail()">✎ Edit Member</button>
+          <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="removeMemberFromDetail()">✕ Remove Membership</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW TRANSACTION MODAL -->
+  <div class="ov hidden" id="ov-newtx">
+    <div class="modal" style="max-width:440px">
+      <div class="mhdr"><div class="mtit">New Transaction</div><button class="mcls" onclick="closeOv('ov-newtx')">✕</button></div>
+      <div class="fl" style="position:relative">
+        <label>Member <span style="color:#E24B4A">*</span></label>
+        <input id="ntSearch" placeholder="Search by name or phone..." autocomplete="off">
+        <div class="ac-dropdown hidden" id="ntSearch-ac"></div>
+      </div>
+      <div id="nt-selected-member" style="display:none;font-size:12px;background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <div class="fl">
+        <label>Bill amount (Rp) <span style="color:#E24B4A">*</span></label>
+        <input id="ntBill" type="number" min="0" placeholder="e.g. 350000" oninput="updateTxPreview()">
+      </div>
+      <div class="fl" style="position:relative">
+        <label>Promotion (optional)</label>
+        <input id="ntPromoSearch" placeholder="Search by code or name..." autocomplete="off" oninput="ntPromoInput()" onfocus="ntPromoInput()">
+        <div class="ac-dropdown hidden" id="ntPromo-ac"></div>
+      </div>
+      <div id="nt-selected-promo" style="display:none;font-size:12px;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <div class="fl">
+        <label>Notes</label>
+        <textarea id="ntNotes" maxlength="200" placeholder="Optional notes..."></textarea>
+      </div>
+      <div id="nt-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:4px"><span>Bill Amount</span><span id="ntPreviewBill">Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:6px" id="ntPreviewDiscountRow"><span>Discount</span><span id="ntPreviewDiscount">– Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding-top:6px;border-top:0.5px solid var(--bd3)"><span>Final Total</span><span id="ntPreviewFinal">Rp 0</span></div>
+      </div>
+      <button class="btn-newtx" style="width:100%;justify-content:center" onclick="submitNewTransaction()">Save Transaction</button>
     </div>
   </div>
 
@@ -745,14 +900,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     <div class="modal" style="max-width:420px">
       <div class="mhdr"><div class="mtit">Add Member</div><button class="mcls" onclick="closeOv('ov-addmember')">✕</button></div>
       <div class="fl" style="position:relative">
-        <label>Guest name or phone</label>
-        <input id="amSearch" placeholder="Start typing a name or phone..." autocomplete="off">
+        <label>Guest name <span style="color:#E24B4A">*</span></label>
+        <input id="amSearch" placeholder="Start typing to find existing customer..." autocomplete="off">
         <div class="ac-dropdown hidden" id="amSearch-ac"></div>
       </div>
       <div class="fl" style="position:relative">
-        <label>Phone number</label>
+        <label>Phone number <span style="color:#E24B4A">*</span></label>
         <input id="amPhone" type="tel" maxlength="20" placeholder="e.g. 08123456789" autocomplete="off">
         <div class="ac-dropdown hidden" id="amPhone-ac"></div>
+      </div>
+      <div class="fl">
+        <label>Birthday <span style="color:#E24B4A">*</span></label>
+        <input id="amBirthday" type="date">
       </div>
       <div class="fl">
         <label>Member since</label>
@@ -763,15 +922,46 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     </div>
   </div>
 
-  <!-- EDIT MEMBER SINCE MODAL -->
+  <!-- EDIT MEMBER MODAL -->
   <div class="ov hidden" id="ov-editmember">
-    <div class="modal" style="max-width:360px">
-      <div class="mhdr"><div class="mtit">Edit Member Since</div><button class="mcls" onclick="closeOv('ov-editmember')">✕</button></div>
+    <div class="modal" style="max-width:420px">
+      <div class="mhdr"><div class="mtit">Edit Member</div><button class="mcls" onclick="closeOv('ov-editmember')">✕</button></div>
+      <div class="fl">
+        <label>Guest name</label>
+        <input id="emName" maxlength="30">
+      </div>
+      <div class="fl">
+        <label>Phone number</label>
+        <input id="emPhone" type="tel" maxlength="20">
+      </div>
+      <div class="fl">
+        <label>Birthday</label>
+        <input id="emBirthday" type="date">
+      </div>
       <div class="fl">
         <label>Member since</label>
         <input id="emSince" type="date">
       </div>
+      <div id="em-warn" style="display:none;font-size:11px;color:#7A5A1E;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:10px">⚠️ Changing Name, Phone, or Birthday requires the Admin & Manager Password.</div>
+      <div id="em-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <button class="btn-pdf" style="width:100%;justify-content:center" onclick="submitEditMember()">Save</button>
+    </div>
+  </div>
+
+  <!-- EDIT MEMBER — PASSWORD CONFIRM MODAL -->
+  <div class="ov hidden" id="ov-editmember-pw">
+    <div class="modal" style="max-width:380px">
+      <div class="mhdr"><div class="mtit">Confirm Changes</div><button class="mcls" onclick="closeOv('ov-editmember-pw')">✕</button></div>
+      <div id="empw-merge-warn" style="display:none;font-size:12px;color:#7A5A1E;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:12px"></div>
+      <div class="fl" style="position:relative">
+        <label>Admin & Manager Password</label>
+        <div style="position:relative">
+          <input id="empwPassword" type="password" placeholder="Enter password" style="padding-right:38px">
+          <button type="button" onclick="toggleEmpwPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="empwPwToggle">👁</button>
+        </div>
+      </div>
+      <div id="empw-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <button class="btn-pdf" style="width:100%;justify-content:center" onclick="submitEditMemberPassword()">Confirm Save</button>
     </div>
   </div>
 
@@ -789,6 +979,61 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div id="rm-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <button class="mred" style="width:100%;justify-content:center;padding:9px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer" onclick="confirmRemoveMember()">Remove Membership</button>
+    </div>
+  </div>
+
+  <!-- ADD PROMOTION MODAL -->
+  <div class="ov hidden" id="ov-addpromo">
+    <div class="modal" style="max-width:420px">
+      <div class="mhdr"><div class="mtit">Add Promotion</div><button class="mcls" onclick="closeOv('ov-addpromo')">✕</button></div>
+      <div class="fl">
+        <label>Promo code</label>
+        <input id="apCode" maxlength="20" placeholder="e.g. BRTH001" style="text-transform:uppercase">
+      </div>
+      <div class="fl">
+        <label>Promo name</label>
+        <input id="apName" maxlength="50" placeholder="e.g. Birthday Discount">
+      </div>
+      <div class="two-col">
+        <div class="fl">
+          <label>Discount (%)</label>
+          <input id="apPct" type="number" min="1" max="100" placeholder="e.g. 20">
+        </div>
+        <div class="fl">
+          <label>Min purchase (Rp)</label>
+          <input id="apMin" type="number" min="0" placeholder="e.g. 200000">
+        </div>
+      </div>
+      <div class="fl">
+        <label>Max discount (Rp)</label>
+        <input id="apMax" type="number" min="0" placeholder="e.g. 100000">
+      </div>
+      <div class="fl" style="position:relative">
+        <label>Admin & Manager Password</label>
+        <div style="position:relative">
+          <input id="apPassword" type="password" placeholder="Enter password" style="padding-right:38px">
+          <button type="button" onclick="toggleApPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="apPwToggle">👁</button>
+        </div>
+      </div>
+      <div id="ap-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <button class="btn-pdf" style="width:100%;justify-content:center" onclick="submitAddPromo()">Add Promotion</button>
+    </div>
+  </div>
+
+  <!-- REMOVE PROMOTION MODAL -->
+  <div class="ov hidden" id="ov-removepromo">
+    <div class="modal" style="max-width:380px">
+      <div class="mhdr"><div class="mtit">Remove Promotion</div><button class="mcls" onclick="closeOv('ov-removepromo')">✕</button></div>
+      <div class="cbanner cbdanger" id="rp-banner" style="margin-bottom:12px"></div>
+      <div class="fl" style="position:relative">
+        <label>Admin & Manager Password</label>
+        <div style="position:relative">
+          <input id="rpPassword" type="password" placeholder="Enter password" style="padding-right:38px">
+          <button type="button" onclick="toggleRpPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="rpPwToggle">👁</button>
+        </div>
+      </div>
+      <div id="rp-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <button class="mred" style="width:100%;justify-content:center;padding:9px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer" onclick="confirmRemovePromo()">Remove Promotion</button>
     </div>
   </div>
 
@@ -1087,6 +1332,7 @@ let bookings=[],activeTbl=null,rcombo=[],wicombo=[],editId=null,editType=null,cf
 let fdate='',ldate='',witime='',view='floor',sess='lunch';
 let wlist=[];
 let members=[];
+let transactions=[];
 let poItems={},poNotes={},poCat=0,poSub=0,poQ='',poPkg=null,pkgDraft={},pkgQty={}; // pkgQty stores quantity for each package
 let currentUser=null;
 
@@ -1177,7 +1423,13 @@ async function checkSession(){
 async function api(url,opts={}){
   const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opts});
   if(r.status===401){location.reload();return;}
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Error '+r.status);}
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    const err=new Error(e.error||'Error '+r.status);
+    if(e.needsMergeConfirm)err.needsMergeConfirm=true;
+    if(e.existingName)err.existingName=e.existingName;
+    throw err;
+  }
   return r.json();
 }
 async function loadAll(){
@@ -1197,6 +1449,7 @@ function initApp(){
   setInterval(()=>{renderFloor();renderExFloor();},60000);
   loadAll();
   api('/api/members').then(m=>{members=m;}).catch(()=>{});
+  api('/api/transactions').then(t=>{transactions=t;}).catch(()=>{});
 }
 
 /* ── INIT ── */
@@ -1519,7 +1772,7 @@ function poGet(){
 }
 
 /* ── VIEW SWITCH ── */
-function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('tab-membership').classList.toggle('active',v==='membership');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');if(v==='list')renderList();if(v==='analytics')loadAnalytics();if(v==='membership')loadMembership();}
+function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('tab-membership').classList.toggle('active',v==='membership');document.getElementById('tab-transactions').classList.toggle('active',v==='transactions');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');document.getElementById('vtransactions').classList.toggle('hidden',v!=='transactions');if(v==='list')renderList();if(v==='analytics')loadAnalytics();if(v==='membership')loadMembership();if(v==='transactions')loadTransactionsTab();}
 function onFDateChange(){const val=document.getElementById('fdate').value;const it=val===today();fdate=it?'':val;const ch=document.getElementById('fchip');ch.textContent=it?'Today':'Viewing '+fmtSh(val);ch.className='vchip '+(it?'chip-live':'chip-prev');renderFloor();}
 function setFToday(){fdate='';document.getElementById('fdate').value=today();const ch=document.getElementById('fchip');ch.textContent='Today';ch.className='vchip chip-live';renderFloor();}
 function openExpand(){const d=afd();const it=d===today();document.getElementById('exlbl').textContent=it?'Today — '+fmtSh(d):fmtFull(d);renderExFloor();document.getElementById('exov').classList.remove('hidden');}
@@ -2383,7 +2636,7 @@ function renderList(){
 async function doRefresh(){const btn=document.getElementById('refbtn');btn.classList.add('spin');await loadAll();setTimeout(()=>btn.classList.remove('spin'),400);showToast('Refreshed');}
 function openOv(id){document.getElementById(id).classList.remove('hidden');}
 function closeOv(id){document.getElementById(id).classList.add('hidden');}
-['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-removemember'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
+['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-removepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
 function showToast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(t==='error'?' err':'');el.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>el.classList.remove('show'),2600);}
 function updClock(){const n=new Date();document.getElementById('clock').textContent=p2(n.getHours())+':'+p2(n.getMinutes());document.getElementById('dateline').textContent=n.toLocaleDateString('en-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
@@ -2580,19 +2833,30 @@ async function loadMembership(){
     members=[];
   }
   renderMembers();
+  loadPromotions();
 }
 
 // Build per-phone all-time visit stats from bookings, optionally filtered by date range
-function memberStatsFor(phone,from,to){
+function memberStatsFor(phone,from,to,fallbackName){
   const rel=bookings.filter(b=>b.phone&&b.phone.trim()===phone&&b.date>=from&&b.date<=to);
   const visits=rel.length;
-  const lastVisit=rel.length?rel.reduce((a,b)=>a.date>b.date?a:b).date:null;
+  let lastVisit=rel.length?rel.reduce((a,b)=>a.date>b.date?a:b).date:null;
   const totalPax=rel.reduce((s,b)=>s+(b.pax||0),0);
   const avgPax=visits?Math.round(totalPax/visits):0;
-  // Most recent name on file for this phone (all-time, regardless of filter)
+  // Last Visit also considers Transactions (all-time, not range-filtered) — a paid transaction is
+  // proof a visit happened even if staff forgot to close the booking on the floor plan.
+  const txForPhone=(transactions||[]).filter(t=>t.memberPhone===phone);
+  if(txForPhone.length){
+    const lastTxDate=txForPhone.reduce((a,t)=>a.date>t.date?a:t).date;
+    if(!lastVisit||lastTxDate>lastVisit)lastVisit=lastTxDate;
+  }
+  // Prefer most recent name from booking history (all-time, regardless of filter); fall back to the stored member name
   const allForPhone=bookings.filter(b=>b.phone&&b.phone.trim()===phone&&b.name);
-  const name=allForPhone.length?allForPhone.reduce((a,b)=>a.date>b.date?a:b).name:'—';
-  return{name,visits,lastVisit,avgPax};
+  const name=allForPhone.length?allForPhone.reduce((a,b)=>a.date>b.date?a:b).name:(fallbackName||'—');
+  // Total Spending — sum of all transactions for this member within the current calendar year (resets each Jan 1)
+  const curYear=new Date().getFullYear();
+  const totalSpending=(transactions||[]).filter(t=>t.memberPhone===phone&&t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
+  return{name,visits,lastVisit,avgPax,totalSpending};
 }
 
 function memberRangeDates(){
@@ -2611,9 +2875,11 @@ function renderMembers(){
   const q=(document.getElementById('memberSearch').value||'').trim().toLowerCase();
 
   let rows=members.map(m=>{
-    const stats=memberStatsFor(m.phone,from,to);
+    const stats=memberStatsFor(m.phone,from,to,m.name);
     return{...m,...stats};
   });
+
+  renderMemberSummaryCards(rows);
 
   // For non-"all" ranges, only show members whose last visit (within range) exists
   if(memberRange!=='all'){
@@ -2631,22 +2897,52 @@ function renderMembers(){
   }
 
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="7" class="empty-state">No members found</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" class="empty-state">No members found</td></tr>';
     return;
   }
 
-  tbody.innerHTML=rows.map(r=>`<tr>
+  tbody.innerHTML=rows.map(r=>`<tr onclick="openMemberDetail(${r.id})" style="cursor:pointer">
     <td>${escapeHtml(r.name)}</td>
     <td>${escapeHtml(r.phone)}</td>
+    <td>${r.birthday?aFmtDate(r.birthday):'—'}</td>
     <td>${aFmtDate(r.memberSince)}</td>
     <td>${r.visits}</td>
     <td>${r.lastVisit?aFmtDate(r.lastVisit):'—'}</td>
     <td>${r.visits?r.avgPax+' pax':'—'}</td>
-    <td style="white-space:nowrap">
-      <button class="ibtn ied" title="Edit member since" onclick="openEditMember(${r.id},'${r.memberSince}')">✎</button>
-      <button class="ibtn idl" title="Remove membership" onclick="openRemoveMember(${r.id},'${escapeHtml(r.name)}','${r.phone}')">✕</button>
-    </td>
+    <td>${r.totalSpending?fmtRp(r.totalSpending):'—'}</td>
   </tr>`).join('');
+}
+
+// Computes and renders the Total Members + Avg Comeback Rate summary cards.
+// allRows = unfiltered (by visit-existence) member stat rows for the current date range — used so
+// the comeback calc isn't accidentally narrowed by the table's "only show members who visited" filter.
+function renderMemberSummaryCards(allRows){
+  const totalEl=document.getElementById('m-total');
+  const totalSubEl=document.getElementById('m-total-sub');
+  const cbEl=document.getElementById('m-comeback');
+  const cbSubEl=document.getElementById('m-comeback-sub');
+  if(!totalEl)return;
+
+  totalEl.textContent=members.length;
+  totalSubEl.textContent='all time';
+
+  // Comeback % not meaningful for very short windows
+  if(memberRange==='today'||memberRange==='7days'){
+    cbEl.textContent='—';
+    cbSubEl.textContent='N/A for this range';
+    return;
+  }
+
+  const visited=allRows.filter(r=>r.visits>0);
+  if(!visited.length){
+    cbEl.textContent='—';
+    cbSubEl.textContent='no visits in range';
+    return;
+  }
+  const cameBack=visited.filter(r=>r.visits>=2).length;
+  const pct=Math.round(cameBack/visited.length*100);
+  cbEl.textContent=pct+'%';
+  cbSubEl.textContent=`${cameBack} of ${visited.length} members`;
 }
 
 function selectMemberTime(btn,range){
@@ -2670,19 +2966,24 @@ function setMemberSort(s){
 function openAddMember(){
   document.getElementById('amSearch').value='';
   document.getElementById('amPhone').value='';
+  document.getElementById('amBirthday').value='';
   document.getElementById('amSince').value=today();
   document.getElementById('am-error').style.display='none';
   openOv('ov-addmember');
 }
 async function submitAddMember(){
+  const name=document.getElementById('amSearch').value.trim();
   const phone=document.getElementById('amPhone').value.trim();
+  const birthday=document.getElementById('amBirthday').value;
   const since=document.getElementById('amSince').value;
   const errEl=document.getElementById('am-error');
   errEl.style.display='none';
+  if(!name){errEl.textContent='Guest name is required.';errEl.style.display='block';return;}
   if(!phone){errEl.textContent='Phone number is required.';errEl.style.display='block';return;}
+  if(!birthday){errEl.textContent='Birthday is required.';errEl.style.display='block';return;}
   if(!since){errEl.textContent='Member since date is required.';errEl.style.display='block';return;}
   try{
-    const m=await api('/api/members',{method:'POST',body:JSON.stringify({phone,memberSince:since})});
+    const m=await api('/api/members',{method:'POST',body:JSON.stringify({name,phone,birthday,memberSince:since})});
     members.push(m);
     closeOv('ov-addmember');
     renderMembers();
@@ -2693,25 +2994,147 @@ async function submitAddMember(){
   }
 }
 
-// ── Edit Member Since ──
+// ── Edit Member (unified form: name, phone, birthday, member since) ──
 let editMemberId=null;
-function openEditMember(id,since){
+let editMemberOriginal=null;
+let pendingEditPayload=null;
+
+// ── Member Detail Modal ──
+let detailMemberId=null;
+function openMemberDetail(id){
+  const mem=members.find(m=>m.id===id);
+  if(!mem)return;
+  detailMemberId=id;
+  const[from,to]=['2000-01-01',aTodayStr()]; // all-time stats for detail view
+  const stats=memberStatsFor(mem.phone,from,to,mem.name);
+
+  document.getElementById('md-name').textContent=stats.name;
+  document.getElementById('md-phone').textContent=mem.phone;
+  document.getElementById('md-birthday').textContent=mem.birthday?aFmtDate(mem.birthday):'—';
+  document.getElementById('md-since').textContent=aFmtDate(mem.memberSince);
+  document.getElementById('md-visits').textContent=stats.visits;
+  document.getElementById('md-lastvisit').textContent=stats.lastVisit?aFmtDate(stats.lastVisit):'—';
+  document.getElementById('md-avgpax').textContent=stats.visits?stats.avgPax+' pax':'—';
+  document.getElementById('md-spend').textContent=stats.totalSpending?fmtRp(stats.totalSpending):'Rp 0';
+  document.getElementById('md-spend-label').textContent='Spend ('+new Date().getFullYear()+')';
+
+  // This member's transactions, newest first
+  const txns=(transactions||[]).filter(t=>t.memberPhone===mem.phone).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  document.getElementById('md-tx-count').textContent=txns.length+' transaction'+(txns.length!==1?'s':'');
+  const listEl=document.getElementById('md-tx-list');
+  if(!txns.length){
+    listEl.innerHTML='<div style="padding:30px 20px;text-align:center;color:var(--tx3);font-size:13px">No transactions yet</div>';
+  } else {
+    listEl.innerHTML=txns.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:0.5px solid var(--bd3);gap:10px">
+      <div style="font-size:11px;color:var(--tx2);width:70px;flex-shrink:0">${aFmtDate(t.date)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--tx)">${fmtRp(t.billAmount)}${t.promoCode?` <span style="display:inline-block;font-size:10px;font-weight:600;background:#1a1a1a;color:#fff;padding:1px 7px;border-radius:8px;margin-left:6px">${escapeHtml(t.promoCode)}</span>`:''}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(t.notes||'—')}</div>
+      </div>
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-size:14px;font-weight:700;color:var(--tx)">${fmtRp(t.finalAmount)}</div>
+        ${t.discountAmount>0?`<div style="font-size:10px;color:#27500A;text-align:right">– ${fmtRp(t.discountAmount)}</div>`:''}
+      </div>
+    </div>`).join('');
+  }
+
+  openOv('ov-memberdetail');
+}
+function editMemberFromDetail(){
+  closeOv('ov-memberdetail');
+  openEditMember(detailMemberId);
+}
+function removeMemberFromDetail(){
+  const mem=members.find(m=>m.id===detailMemberId);
+  if(!mem)return;
+  closeOv('ov-memberdetail');
+  openRemoveMember(mem.id,mem.name,mem.phone);
+}
+
+function openEditMember(id){
+  const mem=members.find(m=>m.id===id);
+  if(!mem)return;
   editMemberId=id;
-  document.getElementById('emSince').value=since;
+  editMemberOriginal={name:mem.name,phone:mem.phone,birthday:mem.birthday,memberSince:mem.memberSince};
+  document.getElementById('emName').value=mem.name;
+  document.getElementById('emPhone').value=mem.phone;
+  document.getElementById('emBirthday').value=mem.birthday||'';
+  document.getElementById('emSince').value=mem.memberSince;
+  document.getElementById('em-warn').style.display='none';
+  document.getElementById('em-error').style.display='none';
   openOv('ov-editmember');
 }
+
 async function submitEditMember(){
-  const since=document.getElementById('emSince').value;
-  if(!since)return;
+  const name=document.getElementById('emName').value.trim();
+  const phone=document.getElementById('emPhone').value.trim();
+  const birthday=document.getElementById('emBirthday').value;
+  const memberSince=document.getElementById('emSince').value;
+  const errEl=document.getElementById('em-error');
+  errEl.style.display='none';
+
+  if(!name){errEl.textContent='Guest name is required.';errEl.style.display='block';return;}
+  if(!phone){errEl.textContent='Phone number is required.';errEl.style.display='block';return;}
+  if(!birthday){errEl.textContent='Birthday is required.';errEl.style.display='block';return;}
+  if(!memberSince){errEl.textContent='Member since date is required.';errEl.style.display='block';return;}
+
+  const protectedChanged=name!==editMemberOriginal.name||phone!==editMemberOriginal.phone||birthday!==editMemberOriginal.birthday;
+  pendingEditPayload={name,phone,birthday,memberSince};
+
+  if(!protectedChanged){
+    await saveEditMember({});
+    return;
+  }
+
+  // Protected field changed — show password confirmation modal
+  window._pendingMergeConfirm=false;
+  document.getElementById('empw-merge-warn').style.display='none';
+  document.getElementById('empwPassword').value='';
+  document.getElementById('empwPassword').type='password';
+  document.getElementById('empwPwToggle').textContent='👁';
+  document.getElementById('empw-error').style.display='none';
+  closeOv('ov-editmember');
+  openOv('ov-editmember-pw');
+}
+
+function toggleEmpwPw(){
+  const inp=document.getElementById('empwPassword');
+  const btn=document.getElementById('empwPwToggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+async function submitEditMemberPassword(){
+  const password=document.getElementById('empwPassword').value;
+  const confirmMerge=!!window._pendingMergeConfirm;
+  await saveEditMember({password},confirmMerge);
+}
+
+async function saveEditMember(extra,confirmMerge){
+  const errEl=document.getElementById('empw-error')||document.getElementById('em-error');
   try{
-    const updated=await api(`/api/members/${editMemberId}`,{method:'PUT',body:JSON.stringify({memberSince:since})});
+    const body={...pendingEditPayload,...extra};
+    if(confirmMerge)body.confirmMerge=true;
+    const updated=await api(`/api/members/${editMemberId}`,{method:'PUT',body:JSON.stringify(body)});
     const idx=members.findIndex(m=>m.id===editMemberId);
     if(idx>=0)members[idx]=updated;
+    window._pendingMergeConfirm=false;
     closeOv('ov-editmember');
+    closeOv('ov-editmember-pw');
+    await loadAll(); // bookings phone numbers may have changed (re-linked) — refresh
     renderMembers();
     showToast('Member updated');
   }catch(e){
-    showToast(e.message,'error');
+    if(e.needsMergeConfirm){
+      // Show merge warning inline in the password modal, let user confirm
+      const warnEl=document.getElementById('empw-merge-warn');
+      warnEl.textContent=`⚠️ ${e.message} Click "Confirm Save" again to proceed.`;
+      warnEl.style.display='block';
+      window._pendingMergeConfirm=true;
+      return;
+    }
+    if(errEl){errEl.textContent=e.message||'Something went wrong';errEl.style.display='block';}
+    else{showToast(e.message,'error');}
   }
 }
 
@@ -2752,13 +3175,353 @@ function exportMembersExcel(){
   if(!members.length){alert('No members to export');return;}
   const[from,to]=memberRangeDates();
   const rows=members.map(m=>{
-    const stats=memberStatsFor(m.phone,from,to);
-    return{Name:stats.name,Phone:m.phone,'Member Since':aFmtDate(m.memberSince),'Total Visits':stats.visits,'Last Visit':stats.lastVisit?aFmtDate(stats.lastVisit):'—','Avg Pax':stats.visits?stats.avgPax:'—'};
+    const stats=memberStatsFor(m.phone,from,to,m.name);
+    return{Name:stats.name,Phone:m.phone,Birthday:m.birthday?aFmtDate(m.birthday):'—','Member Since':aFmtDate(m.memberSince),'Total Visits':stats.visits,'Last Visit':stats.lastVisit?aFmtDate(stats.lastVisit):'—','Avg Pax':stats.visits?stats.avgPax:'—'};
   });
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Members');
   XLSX.writeFile(wb,`Alire-Members-${aTodayStr()}.xlsx`);
+}
+
+// ═══ PROMOTIONS ═══
+let promotions=[];
+
+async function loadPromotions(){
+  try{
+    promotions=await api('/api/promotions');
+  }catch(e){
+    promotions=[];
+  }
+  renderPromotions();
+}
+
+function renderPromotions(){
+  const tbody=document.getElementById('promo-tbody');
+  if(!tbody)return;
+  if(!promotions.length){
+    tbody.innerHTML='<tr><td colspan="6" class="empty-state">No promotions yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML=promotions.map(p=>`<tr>
+    <td><strong>${escapeHtml(p.code)}</strong></td>
+    <td>${escapeHtml(p.name)}</td>
+    <td>${p.discountPct}%</td>
+    <td>${fmtRp(p.minPurchase)}</td>
+    <td>${fmtRp(p.maxDiscount)}</td>
+    <td><button class="ibtn idl" title="Remove promotion" onclick="openRemovePromo(${p.id},'${escapeHtml(p.code)}','${escapeHtml(p.name)}')">✕</button></td>
+  </tr>`).join('');
+}
+
+function fmtRp(n){
+  n=parseFloat(n)||0;
+  if(!n)return'—';
+  return'Rp '+n.toLocaleString('id-ID');
+}
+
+// ── Add Promotion ──
+function openAddPromo(){
+  document.getElementById('apCode').value='';
+  document.getElementById('apName').value='';
+  document.getElementById('apPct').value='';
+  document.getElementById('apMin').value='';
+  document.getElementById('apMax').value='';
+  document.getElementById('apPassword').value='';
+  document.getElementById('apPassword').type='password';
+  document.getElementById('apPwToggle').textContent='👁';
+  document.getElementById('ap-error').style.display='none';
+  openOv('ov-addpromo');
+}
+function toggleApPw(){
+  const inp=document.getElementById('apPassword');
+  const btn=document.getElementById('apPwToggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+async function submitAddPromo(){
+  const code=document.getElementById('apCode').value.trim();
+  const name=document.getElementById('apName').value.trim();
+  const discountPct=document.getElementById('apPct').value;
+  const minPurchase=document.getElementById('apMin').value;
+  const maxDiscount=document.getElementById('apMax').value;
+  const password=document.getElementById('apPassword').value;
+  const errEl=document.getElementById('ap-error');
+  errEl.style.display='none';
+  if(!code){errEl.textContent='Promo code is required.';errEl.style.display='block';return;}
+  if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
+  if(!discountPct||discountPct<1||discountPct>100){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
+  try{
+    const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,password})});
+    promotions.unshift(p);
+    closeOv('ov-addpromo');
+    renderPromotions();
+    showToast('Promotion added');
+  }catch(e){
+    errEl.textContent=e.message||'Failed to add promotion';
+    errEl.style.display='block';
+  }
+}
+
+// ── Remove Promotion ──
+let pendingRemovePromoId=null;
+function openRemovePromo(id,code,name){
+  pendingRemovePromoId=id;
+  document.getElementById('rp-banner').innerHTML=`<strong>${code}</strong> — ${name}`;
+  document.getElementById('rpPassword').value='';
+  document.getElementById('rpPassword').type='password';
+  document.getElementById('rpPwToggle').textContent='👁';
+  document.getElementById('rp-error').style.display='none';
+  openOv('ov-removepromo');
+}
+function toggleRpPw(){
+  const inp=document.getElementById('rpPassword');
+  const btn=document.getElementById('rpPwToggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+async function confirmRemovePromo(){
+  const password=document.getElementById('rpPassword').value;
+  const errEl=document.getElementById('rp-error');
+  errEl.style.display='none';
+  try{
+    await api(`/api/promotions/${pendingRemovePromoId}`,{method:'DELETE',body:JSON.stringify({password})});
+    promotions=promotions.filter(p=>p.id!==pendingRemovePromoId);
+    closeOv('ov-removepromo');
+    renderPromotions();
+    showToast('Promotion removed');
+  }catch(e){
+    errEl.textContent=e.message||'Incorrect password';
+    errEl.style.display='block';
+  }
+}
+
+// ═══ TRANSACTIONS ═══
+let txRange='30days';
+let txCustomFrom=null,txCustomTo=null;
+let ntSelectedMember=null; // {name,phone}
+let ntSelectedPromo=null; // promotion object or null
+
+async function loadTransactionsTab(){
+  try{
+    transactions=await api('/api/transactions');
+  }catch(e){
+    showToast('Failed to load transactions','error');
+    transactions=[];
+  }
+  if(!promotions.length)loadPromotions();
+  renderTransactions();
+}
+
+function txRangeDates(){
+  if(txRange==='today')return[aTodayStr(),aTodayStr()];
+  if(txRange==='7days')return[aDaysAgoStr(7),aTodayStr()];
+  if(txRange==='30days')return[aDaysAgoStr(30),aTodayStr()];
+  if(txRange==='1year'){
+    const y=new Date().getFullYear();
+    return[y+'-01-01',aTodayStr()];
+  }
+  if(txRange==='custom'&&txCustomFrom&&txCustomTo)return[txCustomFrom,txCustomTo];
+  return[aDaysAgoStr(30),aTodayStr()];
+}
+
+function selectTxTime(btn,range){
+  btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  txRange=range;
+  document.getElementById('txCustomRange').classList.toggle('show',range==='custom');
+  if(range!=='custom')renderTransactions();
+}
+function applyTxCustomRange(){
+  const f=document.getElementById('txDateFrom').value;
+  const t=document.getElementById('txDateTo').value;
+  if(f&&t){txCustomFrom=f;txCustomTo=t;renderTransactions();}
+}
+
+function renderTransactions(){
+  const tbody=document.getElementById('tx-tbody');
+  if(!tbody)return;
+  const[from,to]=txRangeDates();
+  const q=(document.getElementById('txSearch').value||'').trim().toLowerCase();
+
+  let rows=transactions.filter(t=>t.date>=from&&t.date<=to);
+  if(q){
+    rows=rows.filter(t=>(t.memberName||'').toLowerCase().includes(q)||(t.memberPhone||'').toLowerCase().includes(q));
+  }
+
+  // Summary cards
+  const totalCount=rows.length;
+  const totalRevenue=rows.reduce((s,t)=>s+t.finalAmount,0);
+  const totalDiscount=rows.reduce((s,t)=>s+t.discountAmount,0);
+  document.getElementById('tx-total').textContent=totalCount;
+  document.getElementById('tx-total-sub').textContent=totalCount?`from ${new Set(rows.map(t=>t.memberPhone)).size} members`:'—';
+  document.getElementById('tx-revenue').textContent=fmtRp(totalRevenue);
+  const withPromo=rows.filter(t=>t.discountAmount>0).length;
+  document.getElementById('tx-discount').textContent=fmtRp(totalDiscount);
+  document.getElementById('tx-discount-sub').textContent=withPromo?`${withPromo} transactions used a promo`:'no promos used';
+
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="8" class="empty-state">No transactions found</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML=rows.map(t=>`<tr>
+    <td>${aFmtDate(t.date)}</td>
+    <td>${escapeHtml(t.memberName)}</td>
+    <td>${escapeHtml(t.memberPhone)}</td>
+    <td>${fmtRp(t.billAmount)}</td>
+    <td>${t.promoCode?`<span class="badge bp">${escapeHtml(t.promoCode)}</span>`:'—'}</td>
+    <td>${t.discountAmount>0?'– '+fmtRp(t.discountAmount):'—'}</td>
+    <td><strong>${fmtRp(t.finalAmount)}</strong></td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(t.notes||'')}">${escapeHtml(t.notes||'—')}</td>
+  </tr>`).join('');
+}
+
+function exportTransactionsExcel(){
+  if(!transactions.length){alert('No transactions to export');return;}
+  const[from,to]=txRangeDates();
+  const rows=transactions.filter(t=>t.date>=from&&t.date<=to).map(t=>({
+    Date:aFmtDate(t.date),Name:t.memberName,Phone:t.memberPhone,'Bill Amount':t.billAmount,
+    'Promo Code':t.promoCode||'—','Discount':t.discountAmount,'Final Total':t.finalAmount,Notes:t.notes||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Transactions');
+  XLSX.writeFile(wb,`Alire-Transactions-${aTodayStr()}.xlsx`);
+}
+
+// ── New Transaction modal ──
+function openNewTransaction(){
+  ntSelectedMember=null;
+  ntSelectedPromo=null;
+  document.getElementById('ntSearch').value='';
+  document.getElementById('ntBill').value='';
+  document.getElementById('ntPromoSearch').value='';
+  document.getElementById('ntNotes').value='';
+  document.getElementById('nt-selected-member').style.display='none';
+  document.getElementById('nt-selected-promo').style.display='none';
+  document.getElementById('nt-error').style.display='none';
+  updateTxPreview();
+  if(!promotions.length)loadPromotions();
+  openOv('ov-newtx');
+}
+
+// Member search (custom, since we need to pick from `members`, not generic booking autocomplete)
+document.addEventListener('DOMContentLoaded',()=>{
+  const ntInput=document.getElementById('ntSearch');
+  if(ntInput){
+    ntInput.addEventListener('input',()=>{
+      ntSelectedMember=null;
+      document.getElementById('nt-selected-member').style.display='none';
+      const q=ntInput.value.trim().toLowerCase();
+      if(q.length<2){acHideCustom('ntSearch-ac');return;}
+      const matches=members.filter(m=>m.name.toLowerCase().includes(q)||m.phone.toLowerCase().includes(q)).slice(0,5);
+      renderNtMemberDropdown(matches);
+    });
+    ntInput.addEventListener('blur',()=>setTimeout(()=>acHideCustom('ntSearch-ac'),150));
+  }
+});
+function renderNtMemberDropdown(matches){
+  const dd=document.getElementById('ntSearch-ac');
+  if(!matches.length){dd.classList.add('hidden');dd.innerHTML='';return;}
+  dd.innerHTML=matches.map((m,i)=>`<div class="ac-item" onmousedown="selectNtMember(${i})"><span class="ac-name">${escapeHtml(m.name)}</span><span class="ac-phone">${escapeHtml(m.phone)}</span></div>`).join('');
+  dd.dataset.items=JSON.stringify(matches);
+  dd.classList.remove('hidden');
+}
+function selectNtMember(i){
+  const dd=document.getElementById('ntSearch-ac');
+  const matches=JSON.parse(dd.dataset.items||'[]');
+  const m=matches[i];
+  if(!m)return;
+  ntSelectedMember={name:m.name,phone:m.phone};
+  document.getElementById('ntSearch').value=m.name;
+  const sel=document.getElementById('nt-selected-member');
+  sel.innerHTML=`✓ <strong>${escapeHtml(m.name)}</strong> — ${escapeHtml(m.phone)}`;
+  sel.style.display='block';
+  acHideCustom('ntSearch-ac');
+}
+function acHideCustom(id){
+  const dd=document.getElementById(id);
+  if(dd){dd.classList.add('hidden');dd.innerHTML='';}
+}
+
+// Promo search within the transaction modal
+function ntPromoInput(){
+  const q=document.getElementById('ntPromoSearch').value.trim().toLowerCase();
+  const dd=document.getElementById('ntPromo-ac');
+  if(!q){
+    // Show all promos when focused with empty input
+    renderNtPromoDropdown(promotions.slice(0,5));
+    return;
+  }
+  const matches=promotions.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)).slice(0,5);
+  renderNtPromoDropdown(matches);
+}
+function renderNtPromoDropdown(matches){
+  const dd=document.getElementById('ntPromo-ac');
+  if(!matches.length){dd.classList.add('hidden');dd.innerHTML='';return;}
+  dd.innerHTML=matches.map((p,i)=>`<div class="ac-item" onmousedown="selectNtPromo(${i})"><span class="ac-name">${escapeHtml(p.code)} — ${escapeHtml(p.name)}</span><span class="ac-phone">${p.discountPct}%</span></div>`).join('');
+  dd.dataset.items=JSON.stringify(matches);
+  dd.classList.remove('hidden');
+}
+function selectNtPromo(i){
+  const dd=document.getElementById('ntPromo-ac');
+  const matches=JSON.parse(dd.dataset.items||'[]');
+  const p=matches[i];
+  if(!p)return;
+  ntSelectedPromo=p;
+  document.getElementById('ntPromoSearch').value=`${p.code} — ${p.name}`;
+  const sel=document.getElementById('nt-selected-promo');
+  sel.innerHTML=`<strong>${escapeHtml(p.code)}</strong> — ${p.discountPct}% off${p.minPurchase?` (min ${fmtRp(p.minPurchase)})`:''}${p.maxDiscount?`, max ${fmtRp(p.maxDiscount)}`:''} <button type="button" onclick="clearNtPromo()" style="float:right;background:none;border:none;cursor:pointer;color:#791F1F;font-weight:600">✕</button>`;
+  sel.style.display='block';
+  acHideCustom('ntPromo-ac');
+  updateTxPreview();
+}
+function clearNtPromo(){
+  ntSelectedPromo=null;
+  document.getElementById('ntPromoSearch').value='';
+  document.getElementById('nt-selected-promo').style.display='none';
+  updateTxPreview();
+}
+
+function updateTxPreview(){
+  const bill=parseFloat(document.getElementById('ntBill').value)||0;
+  let discount=0;
+  if(ntSelectedPromo&&bill>=ntSelectedPromo.minPurchase){
+    discount=bill*(ntSelectedPromo.discountPct/100);
+    if(ntSelectedPromo.maxDiscount>0)discount=Math.min(discount,ntSelectedPromo.maxDiscount);
+  }
+  discount=Math.round(discount);
+  const final=Math.max(0,bill-discount);
+  document.getElementById('ntPreviewBill').textContent=fmtRp(bill);
+  document.getElementById('ntPreviewDiscount').textContent='– '+fmtRp(discount);
+  document.getElementById('ntPreviewDiscountRow').style.display=discount>0?'flex':'none';
+  document.getElementById('ntPreviewFinal').textContent=fmtRp(final);
+}
+
+async function submitNewTransaction(){
+  const errEl=document.getElementById('nt-error');
+  errEl.style.display='none';
+  if(!ntSelectedMember){errEl.textContent='Please select a member from the list.';errEl.style.display='block';return;}
+  const bill=parseFloat(document.getElementById('ntBill').value);
+  if(!bill||bill<=0){errEl.textContent='A valid bill amount is required.';errEl.style.display='block';return;}
+  if(ntSelectedPromo&&bill<ntSelectedPromo.minPurchase){
+    errEl.textContent=`Bill amount is below the minimum purchase (${fmtRp(ntSelectedPromo.minPurchase)}) for this promo.`;
+    errEl.style.display='block';
+    return;
+  }
+  const notes=document.getElementById('ntNotes').value.trim();
+  try{
+    const txn=await api('/api/transactions',{method:'POST',body:JSON.stringify({
+      phone:ntSelectedMember.phone,billAmount:bill,promoId:ntSelectedPromo?ntSelectedPromo.id:null,notes,date:aTodayStr()
+    })});
+    transactions.unshift(txn);
+    closeOv('ov-newtx');
+    renderTransactions();
+    showToast('Transaction saved');
+  }catch(e){
+    errEl.textContent=e.message||'Failed to save transaction';
+    errEl.style.display='block';
+  }
 }
 
 // ═══ ANALYTICS ═══
@@ -3107,7 +3870,8 @@ async function exportPDF(){
   const rowH=5;
   const padTop=8,padX=4;
 
-  // Pre-compute Summary rows
+  // Pre-compute Summary rows, including how many lines each value wraps to
+  const summaryColTextW=halfColW-padX-30;
   const rows=[
     ['Total Bookings', `${s.t} (${s.res} res, ${s.wlk} walk-ins)`],
     ['Total Pax', `${s.tp} (${s.rp} res, ${s.wp} walk-ins)`],
@@ -3115,6 +3879,14 @@ async function exportPDF(){
     ['Pre-Orders', `${s.po} (${s.res?Math.round(s.po/s.res*100):0}% of res)`],
     ['Top 3 Tables', s.top3.length?s.top3.map(([id,c])=>`${String(id).startsWith('V')?id:'T'+id} (${c})`).join(', '):'—'],
   ];
+  doc.setFontSize(9);
+  const rowLineCounts=rows.map(([,val])=>doc.splitTextToSize(val,summaryColTextW).length);
+  const rowYOffsets=[]; // cumulative Y offset for each row's start
+  {
+    let acc=0;
+    rowLineCounts.forEach(lc=>{rowYOffsets.push(acc);acc+=Math.max(lc,1)*rowH;});
+  }
+  const summaryRowsTotalH=rowYOffsets.length?rowYOffsets[rowYOffsets.length-1]+Math.max(rowLineCounts[rowLineCounts.length-1],1)*rowH:0;
 
   // Pre-compute Highlights
   const hrs=['08','09','10','11','12','13','14','15','16','17','18','19','20','21','22'];
@@ -3141,7 +3913,7 @@ async function exportPDF(){
   if(s.t>0)highlights.push(`Reservation vs walk-in split: ${s.res} / ${s.wlk}`);
 
   // Box heights — make both boxes match the taller of the two
-  const summaryBoxH=padTop+rows.length*rowH+2;
+  const summaryBoxH=padTop+summaryRowsTotalH+2;
   const highlightBoxH=padTop+highlights.length*rowH+2;
   const boxH=Math.max(summaryBoxH,highlightBoxH);
 
@@ -3151,10 +3923,10 @@ async function exportPDF(){
   doc.text('Summary',summaryX+padX,summaryTopY+6);
   doc.setFontSize(9);
   rows.forEach(([lb,val],i)=>{
-    const ry=summaryTopY+11+i*rowH;
+    const ry=summaryTopY+11+rowYOffsets[i];
     doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text(lb+':',summaryX+padX,ry);
     doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
-    const lines=doc.splitTextToSize(val,halfColW-padX-30);
+    const lines=doc.splitTextToSize(val,summaryColTextW);
     doc.text(lines,summaryX+30,ry);
   });
 
