@@ -68,6 +68,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .vtab{font-size:13px;padding:8px 20px;cursor:pointer;border-radius:8px;font-family:var(--font);font-weight:500;border:0.5px solid var(--bd2);background:var(--bg);color:var(--tx2)}
 .vtab:hover:not(.active){background:var(--bg2)}
 .vtab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.msubtab{font-size:15px;font-weight:600;padding:8px 4px;margin-right:24px;cursor:pointer;border:none;background:none;color:var(--tx2);border-bottom:2px solid transparent}
+.msubtab:hover{color:var(--tx)}
+.msubtab.active{color:var(--tx);border-bottom-color:var(--brand)}
 /* ANALYTICS */
 .analytics-panel{flex:1;padding:16px;overflow-y:auto}
 .analytics-panel.hidden{display:none}
@@ -520,7 +523,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     <button class="vtab" id="tab-list" onclick="switchView('list')">Reservation list</button>
     <button class="vtab" id="tab-analytics" onclick="switchView('analytics')">Analytics</button>
     <button class="vtab" id="tab-membership" onclick="switchView('membership')">Membership</button>
-    <button class="vtab" id="tab-transactions" onclick="switchView('transactions')">Transactions</button>
   </div>
 
   <!-- FLOOR VIEW -->
@@ -700,115 +702,119 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
   <!-- MEMBERSHIP VIEW -->
   <div id="vmembership" class="analytics-panel hidden">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
-      <div style="font-size:18px;font-weight:600">Membership</div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <button class="btn-export" onclick="exportMembersExcel()">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Excel
-        </button>
-        <button class="btn-pdf" onclick="openAddMember()">+ Add Member</button>
-        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;gap:4px">
+        <button class="msubtab active" id="msubtab-members" onclick="switchMemberSubTab('members')">Membership</button>
+        <button class="msubtab" id="msubtab-tx" onclick="switchMemberSubTab('tx')">Transaction History</button>
+      </div>
+      <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
+    </div>
+    <div style="border-bottom:1px solid var(--bd2);margin-bottom:20px"></div>
+
+    <!-- MEMBERS SUB-TAB -->
+    <div id="msub-members">
+      <div class="summary-grid">
+        <div class="sum-card"><div class="sum-value" id="m-total">0</div><div class="sum-label">Total Members</div><div class="sum-sub" id="m-total-sub">all time</div></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="time-selector" style="margin:0">
+          <button class="time-btn active" onclick="selectMemberTime(this,'all')">All Time</button>
+          <button class="time-btn" onclick="selectMemberTime(this,'today')">Today</button>
+          <button class="time-btn" onclick="selectMemberTime(this,'7days')">Last 7 Days</button>
+          <button class="time-btn" onclick="selectMemberTime(this,'30days')">Last 30 Days</button>
+          <button class="time-btn" onclick="selectMemberTime(this,'1year')">Last 1 Year</button>
+          <button class="time-btn" onclick="selectMemberTime(this,'custom')">Custom Range</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <input type="text" id="memberSearch" placeholder="Search name or phone..." oninput="renderMembers()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
+          <button class="btn-export" onclick="exportMembersExcel()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Excel
+          </button>
+          <button class="btn-pdf" onclick="openAddMember()">+ Add Member</button>
+        </div>
+      </div>
+
+      <div class="custom-range" id="memberCustomRange">
+        <label>From:</label><input type="date" id="memberDateFrom">
+        <label>To:</label><input type="date" id="memberDateTo">
+        <button class="btn-apply" onclick="applyMemberCustomRange()">Apply</button>
+      </div>
+
+      <div class="chart-section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--tx2)">Sort by:</span>
+          <select id="msort-select" onchange="setMemberSort(this.value)" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
+            <option value="visits" selected>Total Visits</option>
+            <option value="since">Member Since</option>
+          </select>
+        </div>
+        <div style="max-height:500px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+          <table class="repeat-table">
+            <thead><tr><th>Name</th><th>Phone</th><th>Birthday</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th>Total Spending</th></tr></thead>
+            <tbody id="member-tbody"><tr><td colspan="8" class="empty-state">No members yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+          <div class="chart-title" style="margin:0">Available Promo</div>
+          <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+          <table class="repeat-table">
+            <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="promo-tbody"><tr><td colspan="7" class="empty-state">No promotions yet</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div class="summary-grid">
-      <div class="sum-card"><div class="sum-value" id="m-total">0</div><div class="sum-label">Total Members</div><div class="sum-sub" id="m-total-sub">all time</div></div>
-      <div class="sum-card"><div class="sum-value" id="m-comeback">—</div><div class="sum-label">Avg Comeback Rate</div><div class="sum-sub" id="m-comeback-sub">—</div></div>
-    </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-      <div class="time-selector" style="margin:0">
-        <button class="time-btn active" onclick="selectMemberTime(this,'all')">All Time</button>
-        <button class="time-btn" onclick="selectMemberTime(this,'today')">Today</button>
-        <button class="time-btn" onclick="selectMemberTime(this,'7days')">Last 7 Days</button>
-        <button class="time-btn" onclick="selectMemberTime(this,'30days')">Last 30 Days</button>
-        <button class="time-btn" onclick="selectMemberTime(this,'1year')">Last 1 Year</button>
-        <button class="time-btn" onclick="selectMemberTime(this,'custom')">Custom Range</button>
-      </div>
-      <input type="text" id="memberSearch" placeholder="Search name or phone..." oninput="renderMembers()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
-    </div>
-
-    <div class="custom-range" id="memberCustomRange">
-      <label>From:</label><input type="date" id="memberDateFrom">
-      <label>To:</label><input type="date" id="memberDateTo">
-      <button class="btn-apply" onclick="applyMemberCustomRange()">Apply</button>
-    </div>
-
-    <div class="chart-section">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--tx2)">Sort by:</span>
-        <select id="msort-select" onchange="setMemberSort(this.value)" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
-          <option value="visits" selected>Total Visits</option>
-          <option value="since">Member Since</option>
-        </select>
-      </div>
-      <div style="max-height:500px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
-        <table class="repeat-table">
-          <thead><tr><th>Name</th><th>Phone</th><th>Birthday</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th>Total Spending</th></tr></thead>
-          <tbody id="member-tbody"><tr><td colspan="8" class="empty-state">No members yet</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="chart-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-        <div class="chart-title" style="margin:0">Promotions</div>
-        <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
-      </div>
-      <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
-        <table class="repeat-table">
-          <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th></th></tr></thead>
-          <tbody id="promo-tbody"><tr><td colspan="6" class="empty-state">No promotions yet</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TRANSACTIONS VIEW -->
-  <div id="vtransactions" class="analytics-panel hidden">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
-      <div style="font-size:18px;font-weight:600">Transaction History</div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <!-- TRANSACTION HISTORY SUB-TAB -->
+    <div id="msub-tx" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px">
         <button class="btn-export" onclick="exportTransactionsExcel()">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Excel
         </button>
-        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
+      </div>
+
+      <div class="summary-grid">
+        <div class="sum-card"><div class="sum-value" id="tx-total">0</div><div class="sum-label">Total Transactions</div><div class="sum-sub" id="tx-total-sub">—</div></div>
+        <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">after discounts</div></div>
+        <div class="sum-card"><div class="sum-value" id="tx-discount">Rp 0</div><div class="sum-label">Total Discounts Given</div><div class="sum-sub" id="tx-discount-sub">—</div></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="time-selector" style="margin:0">
+          <button class="time-btn" onclick="selectTxTime(this,'today')">Today</button>
+          <button class="time-btn" onclick="selectTxTime(this,'7days')">Last 7 Days</button>
+          <button class="time-btn active" onclick="selectTxTime(this,'30days')">Last 30 Days</button>
+          <button class="time-btn" onclick="selectTxTime(this,'1year')">This Year</button>
+          <button class="time-btn" onclick="selectTxTime(this,'custom')">Custom Range</button>
+        </div>
+        <input type="text" id="txSearch" placeholder="Search name or phone..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
+      </div>
+
+      <div class="custom-range" id="txCustomRange">
+        <label>From:</label><input type="date" id="txDateFrom">
+        <label>To:</label><input type="date" id="txDateTo">
+        <button class="btn-apply" onclick="applyTxCustomRange()">Apply</button>
+      </div>
+
+      <div class="chart-section">
+        <div style="max-height:550px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+          <table class="repeat-table">
+            <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Bill Amount</th><th>Promo</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
+            <tbody id="tx-tbody"><tr><td colspan="8" class="empty-state">No transactions yet</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div class="summary-grid">
-      <div class="sum-card"><div class="sum-value" id="tx-total">0</div><div class="sum-label">Total Transactions</div><div class="sum-sub" id="tx-total-sub">—</div></div>
-      <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">after discounts</div></div>
-      <div class="sum-card"><div class="sum-value" id="tx-discount">Rp 0</div><div class="sum-label">Total Discounts Given</div><div class="sum-sub" id="tx-discount-sub">—</div></div>
-    </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-      <div class="time-selector" style="margin:0">
-        <button class="time-btn" onclick="selectTxTime(this,'today')">Today</button>
-        <button class="time-btn" onclick="selectTxTime(this,'7days')">Last 7 Days</button>
-        <button class="time-btn active" onclick="selectTxTime(this,'30days')">Last 30 Days</button>
-        <button class="time-btn" onclick="selectTxTime(this,'1year')">This Year</button>
-        <button class="time-btn" onclick="selectTxTime(this,'custom')">Custom Range</button>
-      </div>
-      <input type="text" id="txSearch" placeholder="Search name or phone..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
-    </div>
-
-    <div class="custom-range" id="txCustomRange">
-      <label>From:</label><input type="date" id="txDateFrom">
-      <label>To:</label><input type="date" id="txDateTo">
-      <button class="btn-apply" onclick="applyTxCustomRange()">Apply</button>
-    </div>
-
-    <div class="chart-section">
-      <div style="max-height:550px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
-        <table class="repeat-table">
-          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Bill Amount</th><th>Promo</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
-          <tbody id="tx-tbody"><tr><td colspan="8" class="empty-state">No transactions yet</td></tr></tbody>
-        </table>
-      </div>
-    </div>
   </div>
 
   <!-- MEMBER DETAIL MODAL -->
@@ -880,7 +886,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <input id="ntPromoSearch" placeholder="Search by code or name..." autocomplete="off" oninput="ntPromoInput()" onfocus="ntPromoInput()">
         <div class="ac-dropdown hidden" id="ntPromo-ac"></div>
       </div>
-      <div id="nt-selected-promo" style="display:none;font-size:12px;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <div id="nt-selected-promo" style="display:none;font-size:12px;color:#7A5A1E;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div class="fl">
         <label>Notes</label>
         <textarea id="ntNotes" maxlength="200" placeholder="Optional notes..."></textarea>
@@ -911,7 +917,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div class="fl">
         <label>Birthday <span style="color:#E24B4A">*</span></label>
-        <input id="amBirthday" type="date">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px">
+          <input id="amBirthDD" type="number" min="1" max="31" placeholder="DD" maxlength="2">
+          <input id="amBirthMM" type="number" min="1" max="12" placeholder="MM" maxlength="2">
+          <input id="amBirthYYYY" type="number" min="1900" max="2026" placeholder="YYYY" maxlength="4">
+        </div>
       </div>
       <div class="fl">
         <label>Member since</label>
@@ -936,7 +946,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div class="fl">
         <label>Birthday</label>
-        <input id="emBirthday" type="date">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px">
+          <input id="emBirthDD" type="number" min="1" max="31" placeholder="DD" maxlength="2">
+          <input id="emBirthMM" type="number" min="1" max="12" placeholder="MM" maxlength="2">
+          <input id="emBirthYYYY" type="number" min="1900" max="2026" placeholder="YYYY" maxlength="4">
+        </div>
       </div>
       <div class="fl">
         <label>Member since</label>
@@ -1034,6 +1048,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div id="rp-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <button class="mred" style="width:100%;justify-content:center;padding:9px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer" onclick="confirmRemovePromo()">Remove Promotion</button>
+    </div>
+  </div>
+
+  <!-- TOGGLE PROMOTION STATUS MODAL -->
+  <div class="ov hidden" id="ov-togglepromo">
+    <div class="modal" style="max-width:380px">
+      <div class="mhdr"><div class="mtit" id="tp-title">Activate Promotion</div><button class="mcls" onclick="closeOv('ov-togglepromo')">✕</button></div>
+      <div class="cbanner" id="tp-banner" style="margin-bottom:12px"></div>
+      <div class="fl" style="position:relative">
+        <label>Admin & Manager Password</label>
+        <div style="position:relative">
+          <input id="tpPassword" type="password" placeholder="Enter password" style="padding-right:38px">
+          <button type="button" onclick="toggleTpPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="tpPwToggle">👁</button>
+        </div>
+      </div>
+      <div id="tp-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <button class="btn-pdf" style="width:100%;justify-content:center" id="tp-confirm-btn" onclick="confirmTogglePromo()">Confirm</button>
     </div>
   </div>
 
@@ -1772,7 +1803,17 @@ function poGet(){
 }
 
 /* ── VIEW SWITCH ── */
-function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('tab-membership').classList.toggle('active',v==='membership');document.getElementById('tab-transactions').classList.toggle('active',v==='transactions');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');document.getElementById('vtransactions').classList.toggle('hidden',v!=='transactions');if(v==='list')renderList();if(v==='analytics')loadAnalytics();if(v==='membership')loadMembership();if(v==='transactions')loadTransactionsTab();}
+function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('tab-membership').classList.toggle('active',v==='membership');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');if(v==='list')renderList();if(v==='analytics')loadAnalytics();if(v==='membership')loadMembership();}
+
+let memberSubTab='members';
+function switchMemberSubTab(t){
+  memberSubTab=t;
+  document.getElementById('msubtab-members').classList.toggle('active',t==='members');
+  document.getElementById('msubtab-tx').classList.toggle('active',t==='tx');
+  document.getElementById('msub-members').classList.toggle('hidden',t!=='members');
+  document.getElementById('msub-tx').classList.toggle('hidden',t!=='tx');
+  if(t==='tx')loadTransactionsTab();
+}
 function onFDateChange(){const val=document.getElementById('fdate').value;const it=val===today();fdate=it?'':val;const ch=document.getElementById('fchip');ch.textContent=it?'Today':'Viewing '+fmtSh(val);ch.className='vchip '+(it?'chip-live':'chip-prev');renderFloor();}
 function setFToday(){fdate='';document.getElementById('fdate').value=today();const ch=document.getElementById('fchip');ch.textContent='Today';ch.className='vchip chip-live';renderFloor();}
 function openExpand(){const d=afd();const it=d===today();document.getElementById('exlbl').textContent=it?'Today — '+fmtSh(d):fmtFull(d);renderExFloor();document.getElementById('exov').classList.remove('hidden');}
@@ -2636,7 +2677,7 @@ function renderList(){
 async function doRefresh(){const btn=document.getElementById('refbtn');btn.classList.add('spin');await loadAll();setTimeout(()=>btn.classList.remove('spin'),400);showToast('Refreshed');}
 function openOv(id){document.getElementById(id).classList.remove('hidden');}
 function closeOv(id){document.getElementById(id).classList.add('hidden');}
-['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-removepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
+['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-removepromo','ov-togglepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
 function showToast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(t==='error'?' err':'');el.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>el.classList.remove('show'),2600);}
 function updClock(){const n=new Date();document.getElementById('clock').textContent=p2(n.getHours())+':'+p2(n.getMinutes());document.getElementById('dateline').textContent=n.toLocaleDateString('en-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
@@ -2700,16 +2741,34 @@ checkSession();
 // ═══ CUSTOMER AUTOCOMPLETE ═══
 // Builds a name<->phone lookup from existing bookings (most recent wins per key)
 function buildCustomerIndex(){
-  const byPhone={}; // phone -> {name, phone, date}
-  const byName={};  // normalized name -> {name, phone, date}
+  const byPhone={}; // phone -> {name, phone, date, isMember}
+  const byName={};  // normalized name -> {name, phone, date, isMember}
   (bookings||[]).forEach(b=>{
     if(!b.name||!b.phone)return; // need both to be useful for lookup
     const nm=b.name.trim();
     const ph=b.phone.trim();
     if(!nm||!ph)return;
     const key=nm.toLowerCase();
-    if(!byPhone[ph]||b.date>byPhone[ph].date){byPhone[ph]={name:nm,phone:ph,date:b.date};}
-    if(!byName[key]||b.date>byName[key].date){byName[key]={name:nm,phone:ph,date:b.date};}
+    if(!byPhone[ph]||b.date>byPhone[ph].date){byPhone[ph]={name:nm,phone:ph,date:b.date,isMember:false};}
+    if(!byName[key]||b.date>byName[key].date){byName[key]={name:nm,phone:ph,date:b.date,isMember:false};}
+  });
+  // Include members even if they have zero booking history yet, so they're searchable right away.
+  // Also mark any existing booking-derived entry as a member if their phone matches.
+  (members||[]).forEach(m=>{
+    const ph=(m.phone||'').trim();
+    const nm=(m.name||'').trim();
+    if(!ph||!nm)return;
+    if(byPhone[ph]){
+      byPhone[ph].isMember=true;
+    } else {
+      byPhone[ph]={name:nm,phone:ph,date:'0000-00-00',isMember:true};
+    }
+    const key=nm.toLowerCase();
+    if(byName[key]){
+      byName[key].isMember=true;
+    } else if(!byName[key]){
+      byName[key]={name:nm,phone:ph,date:'0000-00-00',isMember:true};
+    }
   });
   return{byPhone,byName,
     all(){
@@ -2738,7 +2797,7 @@ function acRender(dropdownId,items,nameInputId,phoneInputId){
   const dd=document.getElementById(dropdownId);
   acActiveIdx=-1;
   if(!items.length){dd.classList.add('hidden');dd.innerHTML='';return;}
-  dd.innerHTML=items.map((c,i)=>`<div class="ac-item" data-idx="${i}" onmousedown="acSelect('${dropdownId}','${nameInputId}','${phoneInputId}',${i})"><span class="ac-name">${escapeHtml(c.name)}</span><span class="ac-phone">${escapeHtml(c.phone)}</span></div>`).join('');
+  dd.innerHTML=items.map((c,i)=>`<div class="ac-item" data-idx="${i}" onmousedown="acSelect('${dropdownId}','${nameInputId}','${phoneInputId}',${i})"><span class="ac-name">${c.isMember?'<span style="color:#C5A25D" title="Member">⭐</span> ':''}${escapeHtml(c.name)}</span><span class="ac-phone">${escapeHtml(c.phone)}</span></div>`).join('');
   dd.dataset.items=JSON.stringify(items);
   dd.classList.remove('hidden');
 }
@@ -2783,6 +2842,30 @@ function acKeyNav(e,dropdownId,nameInputId,phoneInputId){
   }else if(e.key==='Escape'){
     acHide(dropdownId);
   }
+}
+
+// Reads DD/MM/YYYY split inputs (given their id prefix, e.g. 'am' for amBirthDD/amBirthMM/amBirthYYYY)
+// and returns an ISO 'YYYY-MM-DD' string, or null if incomplete/invalid.
+function readBirthdayInputs(prefix){
+  const dd=parseInt(document.getElementById(prefix+'BirthDD').value);
+  const mm=parseInt(document.getElementById(prefix+'BirthMM').value);
+  const yyyy=parseInt(document.getElementById(prefix+'BirthYYYY').value);
+  if(!dd||!mm||!yyyy)return null;
+  if(dd<1||dd>31||mm<1||mm>12||yyyy<1900||yyyy>2026)return null;
+  return yyyy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+}
+// Splits an ISO 'YYYY-MM-DD' string into the DD/MM/YYYY input boxes (given id prefix)
+function writeBirthdayInputs(prefix,isoDate){
+  if(!isoDate){
+    document.getElementById(prefix+'BirthDD').value='';
+    document.getElementById(prefix+'BirthMM').value='';
+    document.getElementById(prefix+'BirthYYYY').value='';
+    return;
+  }
+  const[y,m,d]=isoDate.split('-');
+  document.getElementById(prefix+'BirthDD').value=parseInt(d);
+  document.getElementById(prefix+'BirthMM').value=parseInt(m);
+  document.getElementById(prefix+'BirthYYYY').value=parseInt(y);
 }
 
 function escapeHtml(s){
@@ -2913,36 +2996,13 @@ function renderMembers(){
   </tr>`).join('');
 }
 
-// Computes and renders the Total Members + Avg Comeback Rate summary cards.
-// allRows = unfiltered (by visit-existence) member stat rows for the current date range — used so
-// the comeback calc isn't accidentally narrowed by the table's "only show members who visited" filter.
+// Renders the Total Members summary card.
 function renderMemberSummaryCards(allRows){
   const totalEl=document.getElementById('m-total');
   const totalSubEl=document.getElementById('m-total-sub');
-  const cbEl=document.getElementById('m-comeback');
-  const cbSubEl=document.getElementById('m-comeback-sub');
   if(!totalEl)return;
-
   totalEl.textContent=members.length;
   totalSubEl.textContent='all time';
-
-  // Comeback % not meaningful for very short windows
-  if(memberRange==='today'||memberRange==='7days'){
-    cbEl.textContent='—';
-    cbSubEl.textContent='N/A for this range';
-    return;
-  }
-
-  const visited=allRows.filter(r=>r.visits>0);
-  if(!visited.length){
-    cbEl.textContent='—';
-    cbSubEl.textContent='no visits in range';
-    return;
-  }
-  const cameBack=visited.filter(r=>r.visits>=2).length;
-  const pct=Math.round(cameBack/visited.length*100);
-  cbEl.textContent=pct+'%';
-  cbSubEl.textContent=`${cameBack} of ${visited.length} members`;
 }
 
 function selectMemberTime(btn,range){
@@ -2966,7 +3026,7 @@ function setMemberSort(s){
 function openAddMember(){
   document.getElementById('amSearch').value='';
   document.getElementById('amPhone').value='';
-  document.getElementById('amBirthday').value='';
+  writeBirthdayInputs('am',null);
   document.getElementById('amSince').value=today();
   document.getElementById('am-error').style.display='none';
   openOv('ov-addmember');
@@ -2974,13 +3034,13 @@ function openAddMember(){
 async function submitAddMember(){
   const name=document.getElementById('amSearch').value.trim();
   const phone=document.getElementById('amPhone').value.trim();
-  const birthday=document.getElementById('amBirthday').value;
+  const birthday=readBirthdayInputs('am');
   const since=document.getElementById('amSince').value;
   const errEl=document.getElementById('am-error');
   errEl.style.display='none';
   if(!name){errEl.textContent='Guest name is required.';errEl.style.display='block';return;}
   if(!phone){errEl.textContent='Phone number is required.';errEl.style.display='block';return;}
-  if(!birthday){errEl.textContent='Birthday is required.';errEl.style.display='block';return;}
+  if(!birthday){errEl.textContent='Please enter a valid birthday (DD/MM/YYYY).';errEl.style.display='block';return;}
   if(!since){errEl.textContent='Member since date is required.';errEl.style.display='block';return;}
   try{
     const m=await api('/api/members',{method:'POST',body:JSON.stringify({name,phone,birthday,memberSince:since})});
@@ -3058,7 +3118,7 @@ function openEditMember(id){
   editMemberOriginal={name:mem.name,phone:mem.phone,birthday:mem.birthday,memberSince:mem.memberSince};
   document.getElementById('emName').value=mem.name;
   document.getElementById('emPhone').value=mem.phone;
-  document.getElementById('emBirthday').value=mem.birthday||'';
+  writeBirthdayInputs('em',mem.birthday);
   document.getElementById('emSince').value=mem.memberSince;
   document.getElementById('em-warn').style.display='none';
   document.getElementById('em-error').style.display='none';
@@ -3068,14 +3128,14 @@ function openEditMember(id){
 async function submitEditMember(){
   const name=document.getElementById('emName').value.trim();
   const phone=document.getElementById('emPhone').value.trim();
-  const birthday=document.getElementById('emBirthday').value;
+  const birthday=readBirthdayInputs('em');
   const memberSince=document.getElementById('emSince').value;
   const errEl=document.getElementById('em-error');
   errEl.style.display='none';
 
   if(!name){errEl.textContent='Guest name is required.';errEl.style.display='block';return;}
   if(!phone){errEl.textContent='Phone number is required.';errEl.style.display='block';return;}
-  if(!birthday){errEl.textContent='Birthday is required.';errEl.style.display='block';return;}
+  if(!birthday){errEl.textContent='Please enter a valid birthday (DD/MM/YYYY).';errEl.style.display='block';return;}
   if(!memberSince){errEl.textContent='Member since date is required.';errEl.style.display='block';return;}
 
   const protectedChanged=name!==editMemberOriginal.name||phone!==editMemberOriginal.phone||birthday!==editMemberOriginal.birthday;
@@ -3200,7 +3260,7 @@ function renderPromotions(){
   const tbody=document.getElementById('promo-tbody');
   if(!tbody)return;
   if(!promotions.length){
-    tbody.innerHTML='<tr><td colspan="6" class="empty-state">No promotions yet</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" class="empty-state">No promotions yet</td></tr>';
     return;
   }
   tbody.innerHTML=promotions.map(p=>`<tr>
@@ -3209,6 +3269,7 @@ function renderPromotions(){
     <td>${p.discountPct}%</td>
     <td>${fmtRp(p.minPurchase)}</td>
     <td>${fmtRp(p.maxDiscount)}</td>
+    <td><button class="badge ${p.active?'badge-high':'badge-low'}" style="border:none;cursor:pointer;font-family:var(--font)" title="Click to toggle (requires password)" onclick="openTogglePromo(${p.id},'${escapeHtml(p.code)}',${p.active?1:0})">${p.active?'Active':'Inactive'}</button></td>
     <td><button class="ibtn idl" title="Remove promotion" onclick="openRemovePromo(${p.id},'${escapeHtml(p.code)}','${escapeHtml(p.name)}')">✕</button></td>
   </tr>`).join('');
 }
@@ -3289,6 +3350,46 @@ async function confirmRemovePromo(){
     closeOv('ov-removepromo');
     renderPromotions();
     showToast('Promotion removed');
+  }catch(e){
+    errEl.textContent=e.message||'Incorrect password';
+    errEl.style.display='block';
+  }
+}
+
+// ── Toggle Promotion Status (Active/Inactive, password protected) ──
+let pendingTogglePromo=null; // {id, code, currentActive}
+function openTogglePromo(id,code,currentActive){
+  pendingTogglePromo={id,code,currentActive:!!currentActive};
+  const willActivate=!pendingTogglePromo.currentActive;
+  document.getElementById('tp-title').textContent=willActivate?'Activate Promotion':'Deactivate Promotion';
+  const banner=document.getElementById('tp-banner');
+  banner.className='cbanner '+(willActivate?'cbdone':'cbdanger');
+  banner.innerHTML=`<strong>${escapeHtml(code)}</strong> will be marked as ${willActivate?'<strong>Active</strong>':'<strong>Inactive</strong>'}.`;
+  document.getElementById('tp-confirm-btn').textContent=willActivate?'Activate':'Deactivate';
+  document.getElementById('tpPassword').value='';
+  document.getElementById('tpPassword').type='password';
+  document.getElementById('tpPwToggle').textContent='👁';
+  document.getElementById('tp-error').style.display='none';
+  openOv('ov-togglepromo');
+}
+function toggleTpPw(){
+  const inp=document.getElementById('tpPassword');
+  const btn=document.getElementById('tpPwToggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+async function confirmTogglePromo(){
+  const password=document.getElementById('tpPassword').value;
+  const errEl=document.getElementById('tp-error');
+  errEl.style.display='none';
+  try{
+    const newActive=!pendingTogglePromo.currentActive;
+    const updated=await api(`/api/promotions/${pendingTogglePromo.id}/status`,{method:'PUT',body:JSON.stringify({active:newActive,password})});
+    const idx=promotions.findIndex(p=>p.id===pendingTogglePromo.id);
+    if(idx>=0)promotions[idx]=updated;
+    closeOv('ov-togglepromo');
+    renderPromotions();
+    showToast(newActive?'Promotion activated':'Promotion deactivated');
   }catch(e){
     errEl.textContent=e.message||'Incorrect password';
     errEl.style.display='block';
@@ -3406,7 +3507,7 @@ function openNewTransaction(){
 }
 
 // Member search (custom, since we need to pick from `members`, not generic booking autocomplete)
-document.addEventListener('DOMContentLoaded',()=>{
+{
   const ntInput=document.getElementById('ntSearch');
   if(ntInput){
     ntInput.addEventListener('input',()=>{
@@ -3419,7 +3520,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
     ntInput.addEventListener('blur',()=>setTimeout(()=>acHideCustom('ntSearch-ac'),150));
   }
-});
+}
 function renderNtMemberDropdown(matches){
   const dd=document.getElementById('ntSearch-ac');
   if(!matches.length){dd.classList.add('hidden');dd.innerHTML='';return;}
@@ -3448,12 +3549,13 @@ function acHideCustom(id){
 function ntPromoInput(){
   const q=document.getElementById('ntPromoSearch').value.trim().toLowerCase();
   const dd=document.getElementById('ntPromo-ac');
+  const activePromos=promotions.filter(p=>p.active);
   if(!q){
-    // Show all promos when focused with empty input
-    renderNtPromoDropdown(promotions.slice(0,5));
+    // Show all active promos when focused with empty input
+    renderNtPromoDropdown(activePromos.slice(0,5));
     return;
   }
-  const matches=promotions.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)).slice(0,5);
+  const matches=activePromos.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)).slice(0,5);
   renderNtPromoDropdown(matches);
 }
 function renderNtPromoDropdown(matches){

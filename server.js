@@ -84,6 +84,7 @@ db.exec(`
     discountPct REAL NOT NULL,
     minPurchase REAL NOT NULL DEFAULT 0,
     maxDiscount REAL NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -151,6 +152,18 @@ try {
   }
 } catch (e) {
   console.error('Migration error (members.birthday):', e);
+}
+
+// Migration: add active column to promotions table if it doesn't exist yet
+try {
+  const pcols = db.prepare("PRAGMA table_info(promotions)").all();
+  const hasActive = pcols.some(c => c.name === 'active');
+  if (!hasActive) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN active INTEGER NOT NULL DEFAULT 1`);
+    console.log('✅ Migration: added active column to promotions table');
+  }
+} catch (e) {
+  console.error('Migration error (promotions.active):', e);
 }
 
 console.log('✓ SQLite database initialized');
@@ -694,6 +707,26 @@ app.delete('/api/promotions/:id', requireAuth, (req, res) => {
   }
 });
 
+app.put('/api/promotions/:id/status', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active, password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    const stmt = db.prepare('UPDATE promotions SET active = ? WHERE id = ?');
+    const result = stmt.run(active ? 1 : 0, id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Promotion not found' });
+    }
+    const updated = db.prepare('SELECT * FROM promotions WHERE id = ?').get(id);
+    res.json(updated);
+  } catch (error) {
+    console.error('Toggle promotion status error:', error);
+    res.status(500).json({ error: 'Failed to update promotion status' });
+  }
+});
+
 // ── Transactions routes ───────────────────────────────────────────────────────
 app.get('/api/transactions', requireAuth, (req, res) => {
   try {
@@ -730,6 +763,9 @@ app.post('/api/transactions', requireAuth, (req, res) => {
       const promo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(promoId);
       if (!promo) {
         return res.status(404).json({ error: 'Selected promotion no longer exists' });
+      }
+      if (!promo.active) {
+        return res.status(400).json({ error: 'This promotion is no longer active' });
       }
       if (bill < promo.minPurchase) {
         return res.status(400).json({ error: `Bill amount is below the minimum purchase (Rp ${promo.minPurchase.toLocaleString('id-ID')}) for this promo` });
