@@ -85,6 +85,7 @@ db.exec(`
     minPurchase REAL NOT NULL DEFAULT 0,
     maxDiscount REAL NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
+    notes TEXT,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -164,6 +165,18 @@ try {
   }
 } catch (e) {
   console.error('Migration error (promotions.active):', e);
+}
+
+// Migration: add notes column to promotions table if it doesn't exist yet
+try {
+  const pncols = db.prepare("PRAGMA table_info(promotions)").all();
+  const hasNotes = pncols.some(c => c.name === 'notes');
+  if (!hasNotes) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN notes TEXT DEFAULT NULL`);
+    console.log('✅ Migration: added notes column to promotions table');
+  }
+} catch (e) {
+  console.error('Migration error (promotions.notes):', e);
 }
 
 console.log('✓ SQLite database initialized');
@@ -654,7 +667,7 @@ app.get('/api/promotions', requireAuth, (req, res) => {
 
 app.post('/api/promotions', requireAuth, (req, res) => {
   try {
-    const { code, name, discountPct, minPurchase, maxDiscount, password } = req.body;
+    const { code, name, discountPct, minPurchase, maxDiscount, notes, password } = req.body;
     if (password !== MEMBER_REMOVE_PASSWORD) {
       return res.status(403).json({ error: 'Incorrect password' });
     }
@@ -672,14 +685,15 @@ app.post('/api/promotions', requireAuth, (req, res) => {
     const max = parseFloat(maxDiscount) || 0;
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
+    const cleanNotes = (notes || '').trim().slice(0, 300);
 
     const existing = db.prepare('SELECT * FROM promotions WHERE code = ?').get(cleanCode);
     if (existing) {
       return res.status(409).json({ error: `Promo code "${cleanCode}" already exists.` });
     }
 
-    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount) VALUES (?, ?, ?, ?, ?)');
-    const result = stmt.run(cleanCode, cleanName, pct, min, max);
+    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount, notes) VALUES (?, ?, ?, ?, ?, ?)');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, cleanNotes||null);
     const newPromo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(result.lastInsertRowid);
     res.json(newPromo);
   } catch (error) {
@@ -704,6 +718,35 @@ app.delete('/api/promotions/:id', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Delete promotion error:', error);
     res.status(500).json({ error: 'Failed to remove promotion' });
+  }
+});
+
+app.put('/api/promotions/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, name, discountPct, minPurchase, maxDiscount, active, notes, password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    if (!code || !code.trim()) return res.status(400).json({ error: 'Promo code is required' });
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Promo name is required' });
+    const pct = parseFloat(discountPct);
+    if (isNaN(pct) || pct <= 0 || pct > 100) return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
+    const cleanCode = code.trim().toUpperCase().slice(0, 20);
+    const cleanName = name.trim().slice(0, 50);
+    const cleanNotesPut = (notes || '').trim().slice(0, 300);
+    const min = parseFloat(minPurchase) || 0;
+    const max = parseFloat(maxDiscount) || 0;
+    const conflict = db.prepare('SELECT * FROM promotions WHERE code = ? AND id != ?').get(cleanCode, id);
+    if (conflict) return res.status(409).json({ error: `Promo code "${cleanCode}" is already used by another promotion.` });
+    const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=? WHERE id=?');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Promotion not found' });
+    const updated = db.prepare('SELECT * FROM promotions WHERE id = ?').get(id);
+    res.json(updated);
+  } catch (error) {
+    console.error('Update promotion error:', error);
+    res.status(500).json({ error: 'Failed to update promotion' });
   }
 });
 

@@ -707,7 +707,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <button class="msubtab active" id="msubtab-members" onclick="switchMemberSubTab('members')">Membership</button>
         <button class="msubtab" id="msubtab-tx" onclick="switchMemberSubTab('tx')">Transaction History</button>
       </div>
-      <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
     </div>
     <div style="border-bottom:1px solid var(--bd2);margin-bottom:20px"></div>
 
@@ -726,6 +725,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <button class="time-btn" onclick="selectMemberTime(this,'1year')">Last 1 Year</button>
           <button class="time-btn" onclick="selectMemberTime(this,'custom')">Custom Range</button>
         </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <input type="text" id="memberSearch" placeholder="Search name or phone..." oninput="renderMembers()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
           <button class="btn-export" onclick="exportMembersExcel()">
@@ -734,6 +736,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           </button>
           <button class="btn-pdf" onclick="openAddMember()">+ Add Member</button>
         </div>
+        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
       </div>
 
       <div class="custom-range" id="memberCustomRange">
@@ -765,7 +768,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         </div>
         <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
-            <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th>Status</th><th>Notes</th></tr></thead>
             <tbody id="promo-tbody"><tr><td colspan="7" class="empty-state">No promotions yet</td></tr></tbody>
           </table>
         </div>
@@ -774,13 +777,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
     <!-- TRANSACTION HISTORY SUB-TAB -->
     <div id="msub-tx" class="hidden">
-      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px">
-        <button class="btn-export" onclick="exportTransactionsExcel()">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Excel
-        </button>
-      </div>
-
       <div class="summary-grid">
         <div class="sum-card"><div class="sum-value" id="tx-total">0</div><div class="sum-label">Total Transactions</div><div class="sum-sub" id="tx-total-sub">—</div></div>
         <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">after discounts</div></div>
@@ -789,13 +785,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="time-selector" style="margin:0">
+          <button class="time-btn active" onclick="selectTxTime(this,'all')">All Time</button>
           <button class="time-btn" onclick="selectTxTime(this,'today')">Today</button>
           <button class="time-btn" onclick="selectTxTime(this,'7days')">Last 7 Days</button>
-          <button class="time-btn active" onclick="selectTxTime(this,'30days')">Last 30 Days</button>
+          <button class="time-btn" onclick="selectTxTime(this,'30days')">Last 30 Days</button>
           <button class="time-btn" onclick="selectTxTime(this,'1year')">This Year</button>
           <button class="time-btn" onclick="selectTxTime(this,'custom')">Custom Range</button>
         </div>
-        <input type="text" id="txSearch" placeholder="Search name or phone..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:200px">
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <input type="text" id="txSearch" placeholder="Search name, phone or promo code..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:220px">
+          <button class="btn-export" onclick="exportTransactionsExcel()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Excel
+          </button>
+        </div>
+        <button class="btn-newtx" onclick="openNewTransaction()">+ New Transaction</button>
       </div>
 
       <div class="custom-range" id="txCustomRange">
@@ -809,6 +816,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <table class="repeat-table">
             <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Bill Amount</th><th>Promo</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
             <tbody id="tx-tbody"><tr><td colspan="8" class="empty-state">No transactions yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title" style="margin-bottom:12px">Promo Usage Summary</div>
+        <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+          <table class="repeat-table">
+            <thead><tr><th>Code</th><th>Name</th><th>Times Used</th><th>Total Discount Given</th><th>Total Revenue</th></tr></thead>
+            <tbody id="promo-usage-tbody"><tr><td colspan="5" class="empty-state">No data yet</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -858,6 +875,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         </div>
         <div style="max-height:260px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:10px;margin-bottom:20px" id="md-tx-list"></div>
 
+        <button class="btn-newtx" style="width:100%;justify-content:center;margin-bottom:10px" onclick="newTransactionFromDetail()">+ New Transaction</button>
         <div style="display:flex;gap:10px">
           <button class="ied" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="editMemberFromDetail()">✎ Edit Member</button>
           <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="removeMemberFromDetail()">✕ Remove Membership</button>
@@ -879,7 +897,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div id="nt-selected-member" style="display:none;font-size:12px;background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div class="fl">
         <label>Bill amount (Rp) <span style="color:#E24B4A">*</span></label>
-        <input id="ntBill" type="number" min="0" placeholder="e.g. 350000" oninput="updateTxPreview()">
+        <input id="ntBill" type="text" inputmode="numeric" placeholder="e.g. 350.000" oninput="fmtRpInput(this);updateTxPreview()">
       </div>
       <div class="fl" style="position:relative">
         <label>Promotion (optional)</label>
@@ -1015,12 +1033,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         </div>
         <div class="fl">
           <label>Min purchase (Rp)</label>
-          <input id="apMin" type="number" min="0" placeholder="e.g. 200000">
+          <input id="apMin" type="text" inputmode="numeric" placeholder="e.g. 200.000" oninput="fmtRpInput(this)">
         </div>
       </div>
       <div class="fl">
         <label>Max discount (Rp)</label>
-        <input id="apMax" type="number" min="0" placeholder="e.g. 100000">
+        <input id="apMax" type="text" inputmode="numeric" placeholder="e.g. 100.000" oninput="fmtRpInput(this)">
+      </div>
+      <div class="fl">
+        <label>Notes (optional)</label>
+        <textarea id="apNotes" maxlength="300" placeholder="e.g. Only valid for dine-in, cannot be combined with other promos..."></textarea>
       </div>
       <div class="fl" style="position:relative">
         <label>Admin & Manager Password</label>
@@ -1031,6 +1053,58 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div id="ap-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <button class="btn-pdf" style="width:100%;justify-content:center" onclick="submitAddPromo()">Add Promotion</button>
+    </div>
+  </div>
+
+  <!-- EDIT PROMOTION MODAL -->
+  <div class="ov hidden" id="ov-editpromo">
+    <div class="modal" style="max-width:420px">
+      <div class="mhdr"><div class="mtit">Edit Promotion</div><button class="mcls" onclick="closeOv('ov-editpromo')">✕</button></div>
+      <div class="fl">
+        <label>Promo code</label>
+        <input id="epCode" maxlength="20" style="text-transform:uppercase">
+      </div>
+      <div class="fl">
+        <label>Promo name</label>
+        <input id="epName" maxlength="50">
+      </div>
+      <div class="two-col">
+        <div class="fl">
+          <label>Discount (%)</label>
+          <input id="epPct" type="number" min="1" max="100">
+        </div>
+        <div class="fl">
+          <label>Min purchase (Rp)</label>
+          <input id="epMin" type="text" inputmode="numeric" placeholder="e.g. 200.000" oninput="fmtRpInput(this)">
+        </div>
+      </div>
+      <div class="fl">
+        <label>Max discount (Rp)</label>
+        <input id="epMax" type="text" inputmode="numeric" placeholder="e.g. 100.000" oninput="fmtRpInput(this)">
+      </div>
+      <div class="fl">
+        <label>Notes (optional)</label>
+        <textarea id="epNotes" maxlength="300" placeholder="e.g. Only valid for dine-in..."></textarea>
+      </div>
+      <div class="fl">
+        <label>Status</label>
+        <select id="epActive" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
+          <option value="1">Active</option>
+          <option value="0">Inactive</option>
+        </select>
+      </div>
+      <div class="fl" style="position:relative">
+        <label>Admin & Manager Password</label>
+        <div style="position:relative">
+          <input id="epPassword" type="password" placeholder="Enter password" style="padding-right:38px">
+          <button type="button" onclick="toggleEpPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="epPwToggle">👁</button>
+        </div>
+      </div>
+      <div id="ep-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-pdf" style="flex:1;justify-content:center" onclick="submitEditPromo()">Save Changes</button>
+        <button style="flex:1;display:flex;align-items:center;justify-content:center;padding:9px;border-radius:8px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="removePromoFromEdit()">✕ Remove</button>
+      </div>
     </div>
   </div>
 
@@ -1048,23 +1122,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div id="rp-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <button class="mred" style="width:100%;justify-content:center;padding:9px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer" onclick="confirmRemovePromo()">Remove Promotion</button>
-    </div>
-  </div>
-
-  <!-- TOGGLE PROMOTION STATUS MODAL -->
-  <div class="ov hidden" id="ov-togglepromo">
-    <div class="modal" style="max-width:380px">
-      <div class="mhdr"><div class="mtit" id="tp-title">Activate Promotion</div><button class="mcls" onclick="closeOv('ov-togglepromo')">✕</button></div>
-      <div class="cbanner" id="tp-banner" style="margin-bottom:12px"></div>
-      <div class="fl" style="position:relative">
-        <label>Admin & Manager Password</label>
-        <div style="position:relative">
-          <input id="tpPassword" type="password" placeholder="Enter password" style="padding-right:38px">
-          <button type="button" onclick="toggleTpPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="tpPwToggle">👁</button>
-        </div>
-      </div>
-      <div id="tp-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
-      <button class="btn-pdf" style="width:100%;justify-content:center" id="tp-confirm-btn" onclick="confirmTogglePromo()">Confirm</button>
     </div>
   </div>
 
@@ -2677,7 +2734,7 @@ function renderList(){
 async function doRefresh(){const btn=document.getElementById('refbtn');btn.classList.add('spin');await loadAll();setTimeout(()=>btn.classList.remove('spin'),400);showToast('Refreshed');}
 function openOv(id){document.getElementById(id).classList.remove('hidden');}
 function closeOv(id){document.getElementById(id).classList.add('hidden');}
-['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-removepromo','ov-togglepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
+['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-editpromo','ov-removepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
 function showToast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(t==='error'?' err':'');el.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>el.classList.remove('show'),2600);}
 function updClock(){const n=new Date();document.getElementById('clock').textContent=p2(n.getHours())+':'+p2(n.getMinutes());document.getElementById('dateline').textContent=n.toLocaleDateString('en-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
@@ -3110,6 +3167,20 @@ function removeMemberFromDetail(){
   closeOv('ov-memberdetail');
   openRemoveMember(mem.id,mem.name,mem.phone);
 }
+function newTransactionFromDetail(){
+  const mem=members.find(m=>m.id===detailMemberId);
+  if(!mem)return;
+  closeOv('ov-memberdetail');
+  openNewTransaction();
+  // Pre-select this member after modal opens
+  setTimeout(()=>{
+    ntSelectedMember={name:mem.name,phone:mem.phone};
+    document.getElementById('ntSearch').value=mem.name;
+    const sel=document.getElementById('nt-selected-member');
+    sel.innerHTML=`✓ <strong>${escapeHtml(mem.name)}</strong> — ${escapeHtml(mem.phone)}`;
+    sel.style.display='block';
+  },50);
+}
 
 function openEditMember(id){
   const mem=members.find(m=>m.id===id);
@@ -3263,14 +3334,14 @@ function renderPromotions(){
     tbody.innerHTML='<tr><td colspan="7" class="empty-state">No promotions yet</td></tr>';
     return;
   }
-  tbody.innerHTML=promotions.map(p=>`<tr>
+  tbody.innerHTML=promotions.map(p=>`<tr onclick="openEditPromo(${p.id})" style="cursor:pointer">
     <td><strong>${escapeHtml(p.code)}</strong></td>
     <td>${escapeHtml(p.name)}</td>
     <td>${p.discountPct}%</td>
     <td>${fmtRp(p.minPurchase)}</td>
     <td>${fmtRp(p.maxDiscount)}</td>
-    <td><button class="badge ${p.active?'badge-high':'badge-low'}" style="border:none;cursor:pointer;font-family:var(--font)" title="Click to toggle (requires password)" onclick="openTogglePromo(${p.id},'${escapeHtml(p.code)}',${p.active?1:0})">${p.active?'Active':'Inactive'}</button></td>
-    <td><button class="ibtn idl" title="Remove promotion" onclick="openRemovePromo(${p.id},'${escapeHtml(p.code)}','${escapeHtml(p.name)}')">✕</button></td>
+    <td><span class="badge ${p.active?'badge-high':'badge-low'}">${p.active?'Active':'Inactive'}</span></td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx2);font-size:12px" title="${escapeHtml(p.notes||'')}">${p.notes?escapeHtml(p.notes):'—'}</td>
   </tr>`).join('');
 }
 
@@ -3278,6 +3349,17 @@ function fmtRp(n){
   n=parseFloat(n)||0;
   if(!n)return'—';
   return'Rp '+n.toLocaleString('id-ID');
+}
+// Formats a money text input live — keeps cursor position, strips non-digits, adds dot separators
+function fmtRpInput(el){
+  const raw=el.value.replace(/\D/g,'');
+  if(!raw){el.value='';return;}
+  el.value=parseInt(raw,10).toLocaleString('id-ID');
+}
+// Parses a formatted Rp input value back to a plain number
+function parseRpInput(id){
+  const val=(document.getElementById(id).value||'').replace(/\D/g,'');
+  return val?parseInt(val,10):0;
 }
 
 // ── Add Promotion ──
@@ -3287,6 +3369,7 @@ function openAddPromo(){
   document.getElementById('apPct').value='';
   document.getElementById('apMin').value='';
   document.getElementById('apMax').value='';
+  document.getElementById('apNotes').value='';
   document.getElementById('apPassword').value='';
   document.getElementById('apPassword').type='password';
   document.getElementById('apPwToggle').textContent='👁';
@@ -3303,8 +3386,9 @@ async function submitAddPromo(){
   const code=document.getElementById('apCode').value.trim();
   const name=document.getElementById('apName').value.trim();
   const discountPct=document.getElementById('apPct').value;
-  const minPurchase=document.getElementById('apMin').value;
-  const maxDiscount=document.getElementById('apMax').value;
+  const minPurchase=parseRpInput('apMin');
+  const maxDiscount=parseRpInput('apMax');
+  const notes=document.getElementById('apNotes').value.trim();
   const password=document.getElementById('apPassword').value;
   const errEl=document.getElementById('ap-error');
   errEl.style.display='none';
@@ -3312,7 +3396,7 @@ async function submitAddPromo(){
   if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
   if(!discountPct||discountPct<1||discountPct>100){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
-    const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,password})});
+    const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,notes,password})});
     promotions.unshift(p);
     closeOv('ov-addpromo');
     renderPromotions();
@@ -3356,48 +3440,66 @@ async function confirmRemovePromo(){
   }
 }
 
-// ── Toggle Promotion Status (Active/Inactive, password protected) ──
-let pendingTogglePromo=null; // {id, code, currentActive}
-function openTogglePromo(id,code,currentActive){
-  pendingTogglePromo={id,code,currentActive:!!currentActive};
-  const willActivate=!pendingTogglePromo.currentActive;
-  document.getElementById('tp-title').textContent=willActivate?'Activate Promotion':'Deactivate Promotion';
-  const banner=document.getElementById('tp-banner');
-  banner.className='cbanner '+(willActivate?'cbdone':'cbdanger');
-  banner.innerHTML=`<strong>${escapeHtml(code)}</strong> will be marked as ${willActivate?'<strong>Active</strong>':'<strong>Inactive</strong>'}.`;
-  document.getElementById('tp-confirm-btn').textContent=willActivate?'Activate':'Deactivate';
-  document.getElementById('tpPassword').value='';
-  document.getElementById('tpPassword').type='password';
-  document.getElementById('tpPwToggle').textContent='👁';
-  document.getElementById('tp-error').style.display='none';
-  openOv('ov-togglepromo');
+// ── Edit Promotion ──
+let editPromoId=null;
+function openEditPromo(id){
+  const p=promotions.find(pr=>pr.id===id);
+  if(!p)return;
+  editPromoId=id;
+  document.getElementById('epCode').value=p.code;
+  document.getElementById('epName').value=p.name;
+  document.getElementById('epPct').value=p.discountPct;
+  document.getElementById('epMin').value=p.minPurchase?parseInt(p.minPurchase).toLocaleString('id-ID'):'';
+  document.getElementById('epMax').value=p.maxDiscount?parseInt(p.maxDiscount).toLocaleString('id-ID'):'';
+  document.getElementById('epActive').value=p.active?'1':'0';
+  document.getElementById('epNotes').value=p.notes||'';
+  document.getElementById('epPassword').value='';
+  document.getElementById('epPassword').type='password';
+  document.getElementById('epPwToggle').textContent='👁';
+  document.getElementById('ep-error').style.display='none';
+  openOv('ov-editpromo');
 }
-function toggleTpPw(){
-  const inp=document.getElementById('tpPassword');
-  const btn=document.getElementById('tpPwToggle');
+function toggleEpPw(){
+  const inp=document.getElementById('epPassword');
+  const btn=document.getElementById('epPwToggle');
   if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
   else{inp.type='password';btn.textContent='👁';}
 }
-async function confirmTogglePromo(){
-  const password=document.getElementById('tpPassword').value;
-  const errEl=document.getElementById('tp-error');
+async function submitEditPromo(){
+  const code=document.getElementById('epCode').value.trim();
+  const name=document.getElementById('epName').value.trim();
+  const discountPct=document.getElementById('epPct').value;
+  const minPurchase=parseRpInput('epMin');
+  const maxDiscount=parseRpInput('epMax');
+  const active=document.getElementById('epActive').value==='1';
+  const notes=document.getElementById('epNotes').value.trim();
+  const password=document.getElementById('epPassword').value;
+  const errEl=document.getElementById('ep-error');
   errEl.style.display='none';
+  if(!code){errEl.textContent='Promo code is required.';errEl.style.display='block';return;}
+  if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
+  if(!discountPct||discountPct<1||discountPct>100){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
-    const newActive=!pendingTogglePromo.currentActive;
-    const updated=await api(`/api/promotions/${pendingTogglePromo.id}/status`,{method:'PUT',body:JSON.stringify({active:newActive,password})});
-    const idx=promotions.findIndex(p=>p.id===pendingTogglePromo.id);
+    const updated=await api(`/api/promotions/${editPromoId}`,{method:'PUT',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,active,notes,password})});
+    const idx=promotions.findIndex(p=>p.id===editPromoId);
     if(idx>=0)promotions[idx]=updated;
-    closeOv('ov-togglepromo');
+    closeOv('ov-editpromo');
     renderPromotions();
-    showToast(newActive?'Promotion activated':'Promotion deactivated');
+    showToast('Promotion updated');
   }catch(e){
     errEl.textContent=e.message||'Incorrect password';
     errEl.style.display='block';
   }
 }
+function removePromoFromEdit(){
+  const p=promotions.find(pr=>pr.id===editPromoId);
+  if(!p)return;
+  closeOv('ov-editpromo');
+  openRemovePromo(p.id,p.code,p.name);
+}
 
 // ═══ TRANSACTIONS ═══
-let txRange='30days';
+let txRange='all';
 let txCustomFrom=null,txCustomTo=null;
 let ntSelectedMember=null; // {name,phone}
 let ntSelectedPromo=null; // promotion object or null
@@ -3422,7 +3524,7 @@ function txRangeDates(){
     return[y+'-01-01',aTodayStr()];
   }
   if(txRange==='custom'&&txCustomFrom&&txCustomTo)return[txCustomFrom,txCustomTo];
-  return[aDaysAgoStr(30),aTodayStr()];
+  return['2000-01-01',aTodayStr()]; // all time
 }
 
 function selectTxTime(btn,range){
@@ -3444,9 +3546,13 @@ function renderTransactions(){
   const[from,to]=txRangeDates();
   const q=(document.getElementById('txSearch').value||'').trim().toLowerCase();
 
-  let rows=transactions.filter(t=>t.date>=from&&t.date<=to);
+  // Date-filtered rows (used for promo summary — not affected by search query)
+  const dateRows=transactions.filter(t=>t.date>=from&&t.date<=to);
+
+  // Search-filtered rows (used for the transactions table)
+  let rows=dateRows.slice();
   if(q){
-    rows=rows.filter(t=>(t.memberName||'').toLowerCase().includes(q)||(t.memberPhone||'').toLowerCase().includes(q));
+    rows=rows.filter(t=>(t.memberName||'').toLowerCase().includes(q)||(t.memberPhone||'').toLowerCase().includes(q)||(t.promoCode||'').toLowerCase().includes(q));
   }
 
   // Summary cards
@@ -3462,18 +3568,65 @@ function renderTransactions(){
 
   if(!rows.length){
     tbody.innerHTML='<tr><td colspan="8" class="empty-state">No transactions found</td></tr>';
+  } else {
+    tbody.innerHTML=rows.map(t=>`<tr>
+      <td>${aFmtDate(t.date)}</td>
+      <td>${escapeHtml(t.memberName)}</td>
+      <td>${escapeHtml(t.memberPhone)}</td>
+      <td>${fmtRp(t.billAmount)}</td>
+      <td>${t.promoCode?`<span class="badge bp">${escapeHtml(t.promoCode)}</span>`:'—'}</td>
+      <td>${t.discountAmount>0?'– '+fmtRp(t.discountAmount):'—'}</td>
+      <td><strong>${fmtRp(t.finalAmount)}</strong></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(t.notes||'')}">${escapeHtml(t.notes||'—')}</td>
+    </tr>`).join('');
+  }
+
+  // Promo Usage Summary — based on date-filtered rows (not search-filtered)
+  renderPromoUsage(dateRows);
+}
+
+function renderPromoUsage(rows){
+  const usageEl=document.getElementById('promo-usage-tbody');
+  if(!usageEl)return;
+
+  // Group by promo code
+  const map={};
+  rows.forEach(t=>{
+    const key=t.promoCode||'__none__';
+    if(!map[key])map[key]={code:t.promoCode||null,name:null,count:0,discount:0,revenue:0};
+    map[key].count++;
+    map[key].discount+=t.discountAmount||0;
+    map[key].revenue+=t.finalAmount||0;
+  });
+
+  // Enrich with promo name from promotions list (match by code)
+  Object.values(map).forEach(row=>{
+    if(row.code){
+      const promo=promotions.find(p=>p.code===row.code);
+      row.name=promo?promo.name:'(removed)';
+    } else {
+      row.name='No promo';
+    }
+  });
+
+  const sorted=Object.values(map).sort((a,b)=>{
+    // Put "No promo" at bottom, sort rest by count desc
+    if(a.code===null)return 1;
+    if(b.code===null)return -1;
+    return b.count-a.count;
+  });
+
+  if(!sorted.length){
+    usageEl.innerHTML='<tr><td colspan="5" class="empty-state">No data for this period</td></tr>';
     return;
   }
 
-  tbody.innerHTML=rows.map(t=>`<tr>
-    <td>${aFmtDate(t.date)}</td>
-    <td>${escapeHtml(t.memberName)}</td>
-    <td>${escapeHtml(t.memberPhone)}</td>
-    <td>${fmtRp(t.billAmount)}</td>
-    <td>${t.promoCode?`<span class="badge bp">${escapeHtml(t.promoCode)}</span>`:'—'}</td>
-    <td>${t.discountAmount>0?'– '+fmtRp(t.discountAmount):'—'}</td>
-    <td><strong>${fmtRp(t.finalAmount)}</strong></td>
-    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(t.notes||'')}">${escapeHtml(t.notes||'—')}</td>
+  usageEl.innerHTML=sorted.map(r=>`<tr>
+    <td>${r.code?`<span class="badge bp">${escapeHtml(r.code)}</span>`:'—'}</td>
+    <td>${escapeHtml(r.name)}</td>
+    <td><strong>${r.count}</strong></td>
+    <td>${r.discount>0?fmtRp(r.discount):'—'}</td>
+    <td>${fmtRp(r.revenue)}</td>
   </tr>`).join('');
 }
 
@@ -3586,7 +3739,7 @@ function clearNtPromo(){
 }
 
 function updateTxPreview(){
-  const bill=parseFloat(document.getElementById('ntBill').value)||0;
+  const bill=parseRpInput('ntBill');
   let discount=0;
   if(ntSelectedPromo&&bill>=ntSelectedPromo.minPurchase){
     discount=bill*(ntSelectedPromo.discountPct/100);
@@ -3604,7 +3757,7 @@ async function submitNewTransaction(){
   const errEl=document.getElementById('nt-error');
   errEl.style.display='none';
   if(!ntSelectedMember){errEl.textContent='Please select a member from the list.';errEl.style.display='block';return;}
-  const bill=parseFloat(document.getElementById('ntBill').value);
+  const bill=parseRpInput('ntBill');
   if(!bill||bill<=0){errEl.textContent='A valid bill amount is required.';errEl.style.display='block';return;}
   if(ntSelectedPromo&&bill<ntSelectedPromo.minPurchase){
     errEl.textContent=`Bill amount is below the minimum purchase (${fmtRp(ntSelectedPromo.minPurchase)}) for this promo.`;
@@ -3820,7 +3973,28 @@ function applyRepeatCustomRange(){
   const t=document.getElementById('repeatDateTo').value;
   if(f&&t)aBuildRepeat('custom',f,t);
 }
-function loadAnalytics(){aRender('today');}
+function loadAnalytics(){
+  if(aLastStats){
+    // Already loaded — re-render with previously selected range, restore button state
+    const range=aLastRange||'today';
+    // Restore active button
+    document.querySelectorAll('#vanalytics .time-selector .time-btn').forEach(b=>{
+      const r=b.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+      b.classList.toggle('active',r===range);
+    });
+    document.getElementById('customRange').classList.toggle('show',range==='custom');
+    if(range==='custom'&&aLastCustomFrom&&aLastCustomTo){
+      document.getElementById('dateFrom').value=aLastCustomFrom;
+      document.getElementById('dateTo').value=aLastCustomTo;
+      aRender('custom',aLastCustomFrom,aLastCustomTo);
+    } else {
+      aRender(range);
+    }
+  } else {
+    // First time — start with today
+    aRender('today');
+  }
+}
 
 // ─── PDF CHART RENDERING (dark text/colors for white PDF background) ───
 // Alire logo (transparent PNG) for PDF header
