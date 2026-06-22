@@ -742,6 +742,8 @@ app.put('/api/promotions/:id', requireAuth, (req, res) => {
     const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=? WHERE id=?');
     const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, id);
     if (result.changes === 0) return res.status(404).json({ error: 'Promotion not found' });
+    // Keep past transactions in sync — if the code was renamed, update all transactions that used this promo
+    db.prepare('UPDATE transactions SET promoCode = ? WHERE promoId = ?').run(cleanCode, id);
     const updated = db.prepare('SELECT * FROM promotions WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
