@@ -751,6 +751,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <select id="msort-select" onchange="setMemberSort(this.value)" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
             <option value="visits" selected>Total Visits</option>
             <option value="since">Member Since</option>
+            <option value="spending">Total Spending</option>
+            <option value="lastvisit">Last Visit</option>
           </select>
         </div>
         <div style="max-height:500px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
@@ -797,6 +799,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <input type="text" id="txSearch" placeholder="Search name, phone or promo code..." oninput="renderTransactions()" style="padding:7px 12px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);min-width:220px">
+          <select id="txsort-select" onchange="txSort=this.value;renderTransactions()" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
+            <option value="date-desc" selected>Date (newest first)</option>
+            <option value="date-asc">Date (oldest first)</option>
+            <option value="amount-desc">Final Total (highest)</option>
+            <option value="amount-asc">Final Total (lowest)</option>
+            <option value="discount-desc">Discount (highest)</option>
+          </select>
           <button class="btn-export" onclick="exportTransactionsExcel()">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Excel
@@ -821,7 +830,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
 
       <div class="chart-section">
-        <div class="chart-title" style="margin-bottom:12px">Promo Usage Summary</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+          <div class="chart-title" style="margin:0">Promo Usage Summary</div>
+          <select id="pusort-select" onchange="renderPromoUsage(promoUsageCache)" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
+            <option value="count-desc" selected>Times Used (most)</option>
+            <option value="discount-desc">Total Discount (highest)</option>
+            <option value="revenue-desc">Total Revenue (highest)</option>
+          </select>
+        </div>
         <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
             <thead><tr><th>Code</th><th>Name</th><th>Times Used</th><th>Total Discount Given</th><th>Total Revenue</th></tr></thead>
@@ -842,7 +858,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
         <div id="md-profile" style="background:linear-gradient(135deg,var(--brand) 0%,#7a5028 100%);border-radius:12px;padding:20px 22px;color:#fff;margin-bottom:18px;position:relative;overflow:hidden">
           <div style="position:absolute;top:-30%;right:-10%;width:160px;height:160px;background:rgba(255,255,255,.06);border-radius:50%"></div>
-          <div id="md-name" style="font-size:20px;font-weight:700;margin-bottom:3px;position:relative"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;position:relative">
+            <div id="md-name" style="font-size:20px;font-weight:700"></div>
+            <span id="md-tier" style="display:none;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase"></span>
+          </div>
           <div id="md-phone" style="font-size:13px;opacity:.85;position:relative"></div>
           <div style="display:flex;gap:22px;margin-top:14px;position:relative;flex-wrap:wrap">
             <div style="font-size:12px;opacity:.9">Birthday<b id="md-birthday" style="display:block;font-size:13px;font-weight:600;margin-top:1px"></b></div>
@@ -2908,7 +2927,10 @@ function readBirthdayInputs(prefix){
   const mm=parseInt(document.getElementById(prefix+'BirthMM').value);
   const yyyy=parseInt(document.getElementById(prefix+'BirthYYYY').value);
   if(!dd||!mm||!yyyy)return null;
-  if(dd<1||dd>31||mm<1||mm>12||yyyy<1900||yyyy>2026)return null;
+  if(mm<1||mm>12||yyyy<1900||yyyy>2026)return null;
+  // Validate day against actual days in that month (respects leap years)
+  const daysInMonth=new Date(yyyy,mm,0).getDate();
+  if(dd<1||dd>daysInMonth)return null;
   return yyyy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
 }
 // Splits an ISO 'YYYY-MM-DD' string into the DD/MM/YYYY input boxes (given id prefix)
@@ -2996,7 +3018,16 @@ function memberStatsFor(phone,from,to,fallbackName){
   // Total Spending — sum of all transactions for this member within the current calendar year (resets each Jan 1)
   const curYear=new Date().getFullYear();
   const totalSpending=(transactions||[]).filter(t=>t.memberPhone===phone&&t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
-  return{name,visits,lastVisit,avgPax,totalSpending};
+  const tier=getTier(totalSpending);
+  return{name,visits,lastVisit,avgPax,totalSpending,tier};
+}
+
+// Returns tier info based on current-year total spending
+function getTier(spending){
+  if(spending>=12000000)return{name:'Gold',color:'#C5A25D'};
+  if(spending>=7000000)return{name:'Silver',color:'#A8A9AD'};
+  if(spending>=2000000)return{name:'Bronze',color:'#CD7F32'};
+  return null;
 }
 
 function memberRangeDates(){
@@ -3032,6 +3063,15 @@ function renderMembers(){
 
   if(memberSort==='since'){
     rows.sort((a,b)=>(b.memberSince||'').localeCompare(a.memberSince||''));
+  } else if(memberSort==='spending'){
+    rows.sort((a,b)=>b.totalSpending-a.totalSpending);
+  } else if(memberSort==='lastvisit'){
+    rows.sort((a,b)=>{
+      if(!a.lastVisit&&!b.lastVisit)return 0;
+      if(!a.lastVisit)return 1;
+      if(!b.lastVisit)return -1;
+      return b.lastVisit.localeCompare(a.lastVisit);
+    });
   } else {
     rows.sort((a,b)=>b.visits-a.visits);
   }
@@ -3049,7 +3089,7 @@ function renderMembers(){
     <td>${r.visits}</td>
     <td>${r.lastVisit?aFmtDate(r.lastVisit):'—'}</td>
     <td>${r.visits?r.avgPax+' pax':'—'}</td>
-    <td>${r.totalSpending?fmtRp(r.totalSpending):'—'}</td>
+    <td>${r.totalSpending?fmtRp(r.totalSpending):'—'}${r.tier?` <span title="${r.tier.name}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${r.tier.color};vertical-align:middle;margin-left:5px"></span>`:''}</td>
   </tr>`).join('');
 }
 
@@ -3134,6 +3174,22 @@ function openMemberDetail(id){
   document.getElementById('md-avgpax').textContent=stats.visits?stats.avgPax+' pax':'—';
   document.getElementById('md-spend').textContent=stats.totalSpending?fmtRp(stats.totalSpending):'Rp 0';
   document.getElementById('md-spend-label').textContent='Spend ('+new Date().getFullYear()+')';
+
+  // Profile card color — teal if no tier, tier gradient if has tier
+  const profileCard=document.getElementById('md-profile');
+  const tier=stats.tier;
+  if(tier){
+    const c=tier.color;
+    // Darken the tier color slightly for gradient end
+    profileCard.style.background=`linear-gradient(135deg,${c} 0%,${c}99 100%)`;
+    // Show tier badge
+    document.getElementById('md-tier').textContent=tier.name;
+    document.getElementById('md-tier').style.background=`rgba(255,255,255,0.2)`;
+    document.getElementById('md-tier').style.display='inline-block';
+  } else {
+    profileCard.style.background='linear-gradient(135deg,#12484E 0%,#1a6b74 100%)';
+    document.getElementById('md-tier').style.display='none';
+  }
 
   // This member's transactions, newest first
   const txns=(transactions||[]).filter(t=>t.memberPhone===mem.phone).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
@@ -3500,6 +3556,7 @@ function removePromoFromEdit(){
 
 // ═══ TRANSACTIONS ═══
 let txRange='all';
+let txSort='date-desc';
 let txCustomFrom=null,txCustomTo=null;
 let ntSelectedMember=null; // {name,phone}
 let ntSelectedPromo=null; // promotion object or null
@@ -3555,6 +3612,13 @@ function renderTransactions(){
     rows=rows.filter(t=>(t.memberName||'').toLowerCase().includes(q)||(t.memberPhone||'').toLowerCase().includes(q)||(t.promoCode||'').toLowerCase().includes(q));
   }
 
+  // Sort
+  if(txSort==='date-asc')rows.sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
+  else if(txSort==='amount-desc')rows.sort((a,b)=>b.finalAmount-a.finalAmount);
+  else if(txSort==='amount-asc')rows.sort((a,b)=>a.finalAmount-b.finalAmount);
+  else if(txSort==='discount-desc')rows.sort((a,b)=>b.discountAmount-a.discountAmount);
+  else rows.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id); // date-desc default
+
   // Summary cards
   const totalCount=rows.length;
   const totalRevenue=rows.reduce((s,t)=>s+t.finalAmount,0);
@@ -3582,9 +3646,11 @@ function renderTransactions(){
   }
 
   // Promo Usage Summary — based on date-filtered rows (not search-filtered)
+  promoUsageCache=dateRows;
   renderPromoUsage(dateRows);
 }
 
+let promoUsageCache=[];
 function renderPromoUsage(rows){
   const usageEl=document.getElementById('promo-usage-tbody');
   if(!usageEl)return;
@@ -3609,11 +3675,14 @@ function renderPromoUsage(rows){
     }
   });
 
+  const puSort=(document.getElementById('pusort-select')?.value)||'count-desc';
   const sorted=Object.values(map).sort((a,b)=>{
-    // Put "No promo" at bottom, sort rest by count desc
+    // Always put "No promo" at bottom
     if(a.code===null)return 1;
     if(b.code===null)return -1;
-    return b.count-a.count;
+    if(puSort==='discount-desc')return b.discount-a.discount;
+    if(puSort==='revenue-desc')return b.revenue-a.revenue;
+    return b.count-a.count; // count-desc default
   });
 
   if(!sorted.length){
