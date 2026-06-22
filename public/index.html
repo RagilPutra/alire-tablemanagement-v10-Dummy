@@ -84,8 +84,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .custom-range input[type=date]{font-size:13px;padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);outline:none;font-family:var(--font)}
 .btn-apply{font-size:12px;padding:6px 12px;border-radius:8px;border:none;background:var(--brand);color:#fff;cursor:pointer;font-weight:500}
 .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-.sum-card{background:var(--bg2);border-radius:10px;padding:16px}
-.sum-value{font-size:26px;font-weight:600;line-height:1;margin-bottom:4px}
+.sum-card{background:var(--bg2);border-radius:10px;padding:16px;min-width:0;overflow:hidden}
+.sum-value{font-size:clamp(16px,2.5vw,26px);font-weight:600;line-height:1;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sum-label{font-size:11px;color:var(--tx2);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
 .sum-sub{font-size:11px;color:var(--tx3);margin-top:4px;line-height:1.5}
 .chart-section{background:var(--bg);border:0.5px solid var(--bd3);border-radius:12px;padding:20px;margin-bottom:16px}
@@ -814,7 +814,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div class="chart-section">
         <div style="max-height:550px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
-            <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Bill Amount</th><th>Promo</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
+            <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Promo</th><th>Bill Amount</th><th>Discount</th><th>Final Total</th><th>Notes</th></tr></thead>
             <tbody id="tx-tbody"><tr><td colspan="8" class="empty-state">No transactions yet</td></tr></tbody>
           </table>
         </div>
@@ -1125,8 +1125,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     </div>
   </div>
 
-  <div id="vlist" class="hidden">
-    <div class="rl-wrap">
+  <div id="vlist" class="hidden" style="flex:1;padding:16px;overflow-y:auto">
+    <div class="rl-wrap" style="max-width:900px;margin:0 auto">
       <div class="rl-nav">
         <button class="nav-btn" onclick="lnavDay(-1)">&#8592;</button>
         <div class="rl-nav-c">
@@ -3573,8 +3573,8 @@ function renderTransactions(){
       <td>${aFmtDate(t.date)}</td>
       <td>${escapeHtml(t.memberName)}</td>
       <td>${escapeHtml(t.memberPhone)}</td>
-      <td>${fmtRp(t.billAmount)}</td>
       <td>${t.promoCode?`<span class="badge bp">${escapeHtml(t.promoCode)}</span>`:'—'}</td>
+      <td>${fmtRp(t.billAmount)}</td>
       <td>${t.discountAmount>0?'– '+fmtRp(t.discountAmount):'—'}</td>
       <td><strong>${fmtRp(t.finalAmount)}</strong></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(t.notes||'')}">${escapeHtml(t.notes||'—')}</td>
@@ -3634,8 +3634,8 @@ function exportTransactionsExcel(){
   if(!transactions.length){alert('No transactions to export');return;}
   const[from,to]=txRangeDates();
   const rows=transactions.filter(t=>t.date>=from&&t.date<=to).map(t=>({
-    Date:aFmtDate(t.date),Name:t.memberName,Phone:t.memberPhone,'Bill Amount':t.billAmount,
-    'Promo Code':t.promoCode||'—','Discount':t.discountAmount,'Final Total':t.finalAmount,Notes:t.notes||''
+    Date:aFmtDate(t.date),Name:t.memberName,Phone:t.memberPhone,'Promo Code':t.promoCode||'—',
+    'Bill Amount':t.billAmount,'Discount':t.discountAmount,'Final Total':t.finalAmount,Notes:t.notes||''
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
