@@ -714,9 +714,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     <div id="msub-members">
       <div class="summary-grid">
         <div class="sum-card"><div class="sum-value" id="m-total">0</div><div class="sum-label">Total Members</div><div class="sum-sub" id="m-total-sub">all time</div></div>
-        <div class="sum-card"><div class="sum-value" id="m-bronze">0</div><div class="sum-label" style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#CD7F32;flex-shrink:0"></span>Bronze</div><div class="sum-sub">≥ Rp 2.000.000</div></div>
-        <div class="sum-card"><div class="sum-value" id="m-silver">0</div><div class="sum-label" style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#A8A9AD;flex-shrink:0"></span>Silver</div><div class="sum-sub">≥ Rp 7.000.000</div></div>
-        <div class="sum-card"><div class="sum-value" id="m-gold">0</div><div class="sum-label" style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#C5A25D;flex-shrink:0"></span>Gold</div><div class="sum-sub">≥ Rp 12.000.000</div></div>
+        <div class="sum-card">
+          <div class="sum-label" style="margin-bottom:10px;font-weight:700">Tier Summary</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#C5A25D;flex-shrink:0"></span>Gold</span><strong id="m-gold">0</strong></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#A8A9AD;flex-shrink:0"></span>Silver</span><strong id="m-silver">0</strong></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#CD7F32;flex-shrink:0"></span>Bronze</span><strong id="m-bronze">0</strong></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#12484E;flex-shrink:0"></span><span style="color:#12484E;font-weight:500">No Tier</span></span><strong id="m-notier" style="color:#12484E">0</strong></div>
+          </div>
+        </div>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -3104,16 +3110,17 @@ function renderMemberSummaryCards(allRows){
   totalEl.textContent=members.length;
   totalSubEl.textContent='all time';
 
-  // Tier counts — always all-time, computed from all members regardless of date filter
-  const tierCounts={Bronze:0,Silver:0,Gold:0};
+  // Tier counts — always all-time
+  const tierCounts={Bronze:0,Silver:0,Gold:0,None:0};
   members.forEach(m=>{
-    const[from,to]=['2000-01-01',aTodayStr()];
-    const stats=memberStatsFor(m.phone,from,to,m.name);
+    const stats=memberStatsFor(m.phone,'2000-01-01',aTodayStr(),m.name);
     if(stats.tier)tierCounts[stats.tier.name]=(tierCounts[stats.tier.name]||0)+1;
+    else tierCounts.None++;
   });
   document.getElementById('m-bronze').textContent=tierCounts.Bronze;
   document.getElementById('m-silver').textContent=tierCounts.Silver;
   document.getElementById('m-gold').textContent=tierCounts.Gold;
+  document.getElementById('m-notier').textContent=tierCounts.None;
 }
 
 function selectMemberTime(btn,range){
@@ -3824,6 +3831,7 @@ function clearNtPromo(){
   ntSelectedPromo=null;
   document.getElementById('ntPromoSearch').value='';
   document.getElementById('nt-selected-promo').style.display='none';
+  acHideCustom('ntPromo-ac');
   updateTxPreview();
 }
 
