@@ -588,7 +588,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
   </div>
 
   <!-- ANALYTICS VIEW -->
-  <div id="vanalytics" class="analytics-panel">
+  <div id="vanalytics" class="analytics-panel hidden">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd2);flex-wrap:wrap;gap:12px">
       <div style="font-size:18px;font-weight:600">Analytics</div>
       <button class="btn-export" onclick="exportPDF()">
@@ -712,7 +712,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
     <!-- MEMBERS SUB-TAB -->
     <div id="msub-members">
-      <div class="summary-grid">
+      <div style="display:grid;grid-template-columns:auto auto 1fr;gap:12px;margin-bottom:24px;align-items:start">
         <div class="sum-card"><div class="sum-value" id="m-total">0</div><div class="sum-label">Total Members</div><div class="sum-sub" id="m-total-sub">all time</div></div>
         <div class="sum-card">
           <div class="sum-label" style="margin-bottom:10px;font-weight:700">Tier Summary</div>
@@ -721,6 +721,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
             <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#A8A9AD;flex-shrink:0"></span>Silver<span style="font-size:10px;color:var(--tx2);margin-left:2px">≥ Rp 7jt</span></span><strong id="m-silver">0</strong></div>
             <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#CD7F32;flex-shrink:0"></span>Bronze<span style="font-size:10px;color:var(--tx2);margin-left:2px">≥ Rp 2jt</span></span><strong id="m-bronze">0</strong></div>
             <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px"><span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#12484E;flex-shrink:0"></span>No Tier<span style="font-size:10px;color:var(--tx2);margin-left:2px">&lt; Rp 2jt</span></span><strong id="m-notier">0</strong></div>
+          </div>
+        </div>
+        <div class="sum-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-weight:700;font-size:13px">Upcoming Birthdays <span id="bday-count" style="font-size:11px;font-weight:400;color:var(--tx2)"></span></div>
+            <span style="font-size:11px;color:var(--tx2)">next 30 days</span>
+          </div>
+          <div id="bday-list" style="display:flex;flex-direction:column;gap:6px;min-height:80px"></div>
+          <div id="bday-pagination" style="display:none;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:0.5px solid var(--bd3)">
+            <button onclick="bdayPage(-1)" style="background:none;border:0.5px solid var(--bd2);border-radius:6px;padding:3px 10px;cursor:pointer;color:var(--tx2);font-size:13px">←</button>
+            <span id="bday-page-label" style="font-size:11px;color:var(--tx2)"></span>
+            <button onclick="bdayPage(1)" style="background:none;border:0.5px solid var(--bd2);border-radius:6px;padding:3px 10px;cursor:pointer;color:var(--tx2);font-size:13px">→</button>
           </div>
         </div>
       </div>
@@ -3121,6 +3133,88 @@ function renderMemberSummaryCards(allRows){
   document.getElementById('m-silver').textContent=tierCounts.Silver;
   document.getElementById('m-gold').textContent=tierCounts.Gold;
   document.getElementById('m-notier').textContent=tierCounts.None;
+
+  // Upcoming birthdays — next 30 days
+  renderUpcomingBirthdays();
+}
+
+let bdayCurrentPage=0;
+let bdayList=[];
+const BDAY_PER_PAGE=4;
+
+function renderUpcomingBirthdays(){
+  const listEl=document.getElementById('bday-list');
+  const countEl=document.getElementById('bday-count');
+  const pagEl=document.getElementById('bday-pagination');
+  const pagLabel=document.getElementById('bday-page-label');
+  if(!listEl)return;
+
+  const today=new Date();
+  const todayMD=today.getMonth()*100+today.getDate(); // comparable month-day
+
+  // Build upcoming list — for each member check if birthday falls in next 30 days
+  bdayList=[];
+  members.forEach(m=>{
+    if(!m.birthday)return;
+    const[y,mo,d]=m.birthday.split('-').map(Number);
+    // Days until next birthday this year
+    const bdayThisYear=new Date(today.getFullYear(),mo-1,d);
+    let diff=Math.ceil((bdayThisYear-today)/(1000*60*60*24));
+    if(diff<0){
+      // Birthday already passed this year — check next year
+      const bdayNextYear=new Date(today.getFullYear()+1,mo-1,d);
+      diff=Math.ceil((bdayNextYear-today)/(1000*60*60*24));
+    }
+    if(diff<=30&&diff>=0){
+      const stats=memberStatsFor(m.phone,'2000-01-01',aTodayStr(),m.name);
+      bdayList.push({id:m.id,name:stats.name,birthday:m.birthday,diff,tier:stats.tier,month:mo,day:d,year:y});
+    }
+  });
+
+  // Sort by days until birthday (soonest first)
+  bdayList.sort((a,b)=>a.diff-b.diff);
+
+  countEl.textContent=bdayList.length?`(${bdayList.length})` :'';
+
+  if(!bdayList.length){
+    listEl.innerHTML='<div style="font-size:12px;color:var(--tx2);text-align:center;padding:16px 0">No birthdays in the next 30 days</div>';
+    pagEl.style.display='none';
+    return;
+  }
+
+  // Clamp page
+  const totalPages=Math.ceil(bdayList.length/BDAY_PER_PAGE);
+  if(bdayCurrentPage>=totalPages)bdayCurrentPage=totalPages-1;
+  if(bdayCurrentPage<0)bdayCurrentPage=0;
+
+  const pageItems=bdayList.slice(bdayCurrentPage*BDAY_PER_PAGE,(bdayCurrentPage+1)*BDAY_PER_PAGE);
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  listEl.innerHTML=pageItems.map(b=>{
+    const tierCircle=b.tier?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${b.tier.color};margin-left:4px;flex-shrink:0"></span>`:'';
+    const daysLabel=b.diff===0?'Today':b.diff===1?'Tomorrow':`in ${b.diff} days`;
+    const bdayStr=`${b.day} ${monthNames[b.month-1]} ${b.year}`;
+    return `<div onclick="openMemberDetail(${b.id})" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:8px;cursor:pointer;background:var(--bg2)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">
+      <div style="min-width:0">
+        <div style="display:flex;align-items:center;gap:0;font-size:13px;font-weight:600">${escapeHtml(b.name)}${tierCircle}</div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:1px">${bdayStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Pagination
+  if(totalPages>1){
+    pagEl.style.display='flex';
+    pagLabel.textContent=`${bdayCurrentPage+1} / ${totalPages}`;
+  } else {
+    pagEl.style.display='none';
+  }
+}
+
+function bdayPage(dir){
+  const totalPages=Math.ceil(bdayList.length/BDAY_PER_PAGE);
+  bdayCurrentPage=Math.max(0,Math.min(totalPages-1,bdayCurrentPage+dir));
+  renderUpcomingBirthdays();
 }
 
 function selectMemberTime(btn,range){
@@ -3398,10 +3492,22 @@ let promotions=[];
 async function loadPromotions(){
   try{
     promotions=await api('/api/promotions');
+    // Active first, then newest within each group
+    promotions.sort((a,b)=>{
+      if(b.active!==a.active)return b.active-a.active;
+      return b.id-a.id;
+    });
   }catch(e){
     promotions=[];
   }
   renderPromotions();
+}
+
+function sortPromotions(){
+  promotions.sort((a,b)=>{
+    if(b.active!==a.active)return b.active-a.active;
+    return b.id-a.id;
+  });
 }
 
 function renderPromotions(){
@@ -3475,6 +3581,7 @@ async function submitAddPromo(){
   try{
     const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,notes,password})});
     promotions.unshift(p);
+    sortPromotions();
     closeOv('ov-addpromo');
     renderPromotions();
     showToast('Promotion added');
@@ -3560,6 +3667,7 @@ async function submitEditPromo(){
     const updated=await api(`/api/promotions/${editPromoId}`,{method:'PUT',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,active,notes,password})});
     const idx=promotions.findIndex(p=>p.id===editPromoId);
     if(idx>=0)promotions[idx]=updated;
+    sortPromotions();
     closeOv('ov-editpromo');
     renderPromotions();
     showToast('Promotion updated');
