@@ -627,6 +627,12 @@ app.put('/api/members/:id', requireAuth, (req, res) => {
     db.prepare('UPDATE members SET name = ?, phone = ?, birthday = ?, memberSince = ? WHERE id = ?')
       .run(cleanName, cleanPhone, newBirthday, newMemberSince, id);
 
+    // Keep transaction history in sync — update memberName and memberPhone if they changed
+    db.prepare('UPDATE transactions SET memberName = ? WHERE memberPhone = ?').run(cleanName, existing.phone);
+    if (phoneChanged) {
+      db.prepare('UPDATE transactions SET memberPhone = ? WHERE memberPhone = ?').run(cleanPhone, existing.phone);
+    }
+
     const updated = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
@@ -677,8 +683,8 @@ app.post('/api/promotions', requireAuth, (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Promo name is required' });
     }
-    const pct = parseFloat(discountPct);
-    if (isNaN(pct) || pct <= 0 || pct > 100) {
+    const pct = discountPct ? parseFloat(discountPct) : null;
+    if (pct !== null && (isNaN(pct) || pct <= 0 || pct > 100)) {
       return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
     }
     const min = parseFloat(minPurchase) || 0;
@@ -730,8 +736,8 @@ app.put('/api/promotions/:id', requireAuth, (req, res) => {
     }
     if (!code || !code.trim()) return res.status(400).json({ error: 'Promo code is required' });
     if (!name || !name.trim()) return res.status(400).json({ error: 'Promo name is required' });
-    const pct = parseFloat(discountPct);
-    if (isNaN(pct) || pct <= 0 || pct > 100) return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
+    const pct = discountPct ? parseFloat(discountPct) : null;
+    if (pct !== null && (isNaN(pct) || pct <= 0 || pct > 100)) return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotesPut = (notes || '').trim().slice(0, 300);
@@ -812,14 +818,16 @@ app.post('/api/transactions', requireAuth, (req, res) => {
       if (!promo.active) {
         return res.status(400).json({ error: 'This promotion is no longer active' });
       }
-      if (bill < promo.minPurchase) {
+      if (promo.minPurchase > 0 && bill < promo.minPurchase) {
         return res.status(400).json({ error: `Bill amount is below the minimum purchase (Rp ${promo.minPurchase.toLocaleString('id-ID')}) for this promo` });
       }
-      let calcDiscount = bill * (promo.discountPct / 100);
-      if (promo.maxDiscount > 0 && calcDiscount > promo.maxDiscount) {
-        calcDiscount = promo.maxDiscount;
+      if (promo.discountPct) {
+        let calcDiscount = bill * (promo.discountPct / 100);
+        if (promo.maxDiscount > 0 && calcDiscount > promo.maxDiscount) {
+          calcDiscount = promo.maxDiscount;
+        }
+        discountAmount = Math.round(calcDiscount);
       }
-      discountAmount = Math.round(calcDiscount);
       promoCode = promo.code;
       resolvedPromoId = promo.id;
     }

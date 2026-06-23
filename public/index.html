@@ -1071,16 +1071,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div class="two-col">
         <div class="fl">
-          <label>Discount (%)</label>
+          <label>Discount (%) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
           <input id="apPct" type="number" min="1" max="100" placeholder="e.g. 20">
         </div>
         <div class="fl">
-          <label>Min purchase (Rp)</label>
+          <label>Min purchase (Rp) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
           <input id="apMin" type="text" inputmode="numeric" placeholder="e.g. 200.000" oninput="fmtRpInput(this)">
         </div>
       </div>
       <div class="fl">
-        <label>Max discount (Rp)</label>
+        <label>Max discount (Rp) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
         <input id="apMax" type="text" inputmode="numeric" placeholder="e.g. 100.000" oninput="fmtRpInput(this)">
       </div>
       <div class="fl">
@@ -1113,16 +1113,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       </div>
       <div class="two-col">
         <div class="fl">
-          <label>Discount (%)</label>
+          <label>Discount (%) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
           <input id="epPct" type="number" min="1" max="100">
         </div>
         <div class="fl">
-          <label>Min purchase (Rp)</label>
+          <label>Min purchase (Rp) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
           <input id="epMin" type="text" inputmode="numeric" placeholder="e.g. 200.000" oninput="fmtRpInput(this)">
         </div>
       </div>
       <div class="fl">
-        <label>Max discount (Rp)</label>
+        <label>Max discount (Rp) <span style="font-size:11px;color:var(--tx2)">(optional)</span></label>
         <input id="epMax" type="text" inputmode="numeric" placeholder="e.g. 100.000" oninput="fmtRpInput(this)">
       </div>
       <div class="fl">
@@ -3422,7 +3422,15 @@ async function saveEditMember(extra,confirmMerge){
     if(confirmMerge)body.confirmMerge=true;
     const updated=await api(`/api/members/${editMemberId}`,{method:'PUT',body:JSON.stringify(body)});
     const idx=members.findIndex(m=>m.id===editMemberId);
+    const oldPhone=idx>=0?members[idx].phone:null;
     if(idx>=0)members[idx]=updated;
+    // Keep local transactions in sync with new name/phone
+    transactions.forEach(t=>{
+      if(t.memberPhone===oldPhone||t.memberPhone===updated.phone){
+        t.memberName=updated.name;
+        t.memberPhone=updated.phone;
+      }
+    });
     window._pendingMergeConfirm=false;
     closeOv('ov-editmember');
     closeOv('ov-editmember-pw');
@@ -3523,7 +3531,7 @@ function renderPromotions(){
   tbody.innerHTML=promotions.map(p=>`<tr onclick="openEditPromo(${p.id})" style="cursor:pointer">
     <td><strong>${escapeHtml(p.code)}</strong></td>
     <td>${escapeHtml(p.name)}</td>
-    <td>${p.discountPct}%</td>
+    <td>${p.discountPct?p.discountPct+'%':'—'}</td>
     <td>${fmtRp(p.minPurchase)}</td>
     <td>${fmtRp(p.maxDiscount)}</td>
     <td><span class="badge ${p.active?'badge-high':'badge-low'}">${p.active?'Active':'Inactive'}</span></td>
@@ -3580,7 +3588,7 @@ async function submitAddPromo(){
   errEl.style.display='none';
   if(!code){errEl.textContent='Promo code is required.';errEl.style.display='block';return;}
   if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
-  if(!discountPct||discountPct<1||discountPct>100){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
+  if(discountPct&&(discountPct<1||discountPct>100)){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
     const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,notes,password})});
     promotions.unshift(p);
@@ -3665,7 +3673,7 @@ async function submitEditPromo(){
   errEl.style.display='none';
   if(!code){errEl.textContent='Promo code is required.';errEl.style.display='block';return;}
   if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
-  if(!discountPct||discountPct<1||discountPct>100){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
+  if(discountPct&&(discountPct<1||discountPct>100)){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
     const updated=await api(`/api/promotions/${editPromoId}`,{method:'PUT',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,active,notes,password})});
     const idx=promotions.findIndex(p=>p.id===editPromoId);
@@ -3921,7 +3929,7 @@ function renderNtPromoDropdown(matches){
     dd.classList.remove('hidden');
     return;
   }
-  dd.innerHTML=noneItem+matches.map((p,i)=>`<div class="ac-item" onmousedown="selectNtPromo(${i})"><span class="ac-name">${escapeHtml(p.code)} — ${escapeHtml(p.name)}</span><span class="ac-phone">${p.discountPct}%</span></div>`).join('');
+  dd.innerHTML=noneItem+matches.map((p,i)=>`<div class="ac-item" onmousedown="selectNtPromo(${i})"><span class="ac-name">${escapeHtml(p.code)} — ${escapeHtml(p.name)}</span><span class="ac-phone">${p.discountPct?p.discountPct+'%':'—'}</span></div>`).join('');
   dd.dataset.items=JSON.stringify(matches);
   dd.classList.remove('hidden');
 }
@@ -3933,7 +3941,7 @@ function selectNtPromo(i){
   ntSelectedPromo=p;
   document.getElementById('ntPromoSearch').value=`${p.code} — ${p.name}`;
   const sel=document.getElementById('nt-selected-promo');
-  sel.innerHTML=`<strong>${escapeHtml(p.code)}</strong> — ${p.discountPct}% off${p.minPurchase?` (min ${fmtRp(p.minPurchase)})`:''}${p.maxDiscount?`, max ${fmtRp(p.maxDiscount)}`:''} <button type="button" onclick="clearNtPromo()" style="float:right;background:none;border:none;cursor:pointer;color:#791F1F;font-weight:600">✕</button>`;
+  sel.innerHTML=`<strong>${escapeHtml(p.code)}</strong> — ${p.name}${p.discountPct?` · ${p.discountPct}% off`:''}${p.minPurchase?` (min ${fmtRp(p.minPurchase)})`:''}${p.maxDiscount?`, max ${fmtRp(p.maxDiscount)}`:''} <button type="button" onclick="clearNtPromo()" style="float:right;background:none;border:none;cursor:pointer;color:#791F1F;font-weight:600">✕</button>`;
   sel.style.display='block';
   acHideCustom('ntPromo-ac');
   updateTxPreview();
@@ -3949,9 +3957,11 @@ function clearNtPromo(){
 function updateTxPreview(){
   const bill=parseRpInput('ntBill');
   let discount=0;
-  if(ntSelectedPromo&&bill>=ntSelectedPromo.minPurchase){
-    discount=bill*(ntSelectedPromo.discountPct/100);
-    if(ntSelectedPromo.maxDiscount>0)discount=Math.min(discount,ntSelectedPromo.maxDiscount);
+  if(ntSelectedPromo&&ntSelectedPromo.discountPct){
+    if(!ntSelectedPromo.minPurchase||bill>=ntSelectedPromo.minPurchase){
+      discount=bill*(ntSelectedPromo.discountPct/100);
+      if(ntSelectedPromo.maxDiscount>0)discount=Math.min(discount,ntSelectedPromo.maxDiscount);
+    }
   }
   discount=Math.round(discount);
   const final=Math.max(0,bill-discount);
