@@ -81,7 +81,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
-    discountPct REAL NOT NULL,
+    discountPct REAL NOT NULL DEFAULT 0,
     minPurchase REAL NOT NULL DEFAULT 0,
     maxDiscount REAL NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
@@ -683,8 +683,8 @@ app.post('/api/promotions', requireAuth, (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Promo name is required' });
     }
-    const pct = discountPct ? parseFloat(discountPct) : null;
-    if (pct !== null && (isNaN(pct) || pct <= 0 || pct > 100)) {
+    const pct = discountPct ? parseFloat(discountPct) : 0;
+    if (pct > 0 && (isNaN(pct) || pct > 100)) {
       return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
     }
     const min = parseFloat(minPurchase) || 0;
@@ -736,8 +736,8 @@ app.put('/api/promotions/:id', requireAuth, (req, res) => {
     }
     if (!code || !code.trim()) return res.status(400).json({ error: 'Promo code is required' });
     if (!name || !name.trim()) return res.status(400).json({ error: 'Promo name is required' });
-    const pct = discountPct ? parseFloat(discountPct) : null;
-    if (pct !== null && (isNaN(pct) || pct <= 0 || pct > 100)) return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
+    const pct = discountPct ? parseFloat(discountPct) : 0;
+    if (pct > 0 && (isNaN(pct) || pct > 100)) return res.status(400).json({ error: 'Discount must be between 1 and 100%' });
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotesPut = (notes || '').trim().slice(0, 300);
