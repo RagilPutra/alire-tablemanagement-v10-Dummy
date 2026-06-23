@@ -779,7 +779,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
             <option value="lastvisit">Last Visit</option>
           </select>
         </div>
-        <div style="max-height:500px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+        <div style="max-height:400px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
             <thead><tr><th>Name</th><th>Phone</th><th>Birthday</th><th>Member Since</th><th>Total Visits</th><th>Last Visit</th><th>Avg Pax</th><th>Total Spending</th></tr></thead>
             <tbody id="member-tbody"><tr><td colspan="8" class="empty-state">No members yet</td></tr></tbody>
@@ -3037,8 +3037,11 @@ function memberStatsFor(phone,from,to,fallbackName){
     if(!lastVisit||lastTxDate>lastVisit)lastVisit=lastTxDate;
   }
   // Prefer most recent name from booking history (all-time, regardless of filter); fall back to the stored member name
+  // Name: prefer explicitly stored member name (staff may have edited it),
+  // fall back to most recent booking name, then fallbackName
   const allForPhone=bookings.filter(b=>b.phone&&b.phone.trim()===phone&&b.name);
-  const name=allForPhone.length?allForPhone.reduce((a,b)=>a.date>b.date?a:b).name:(fallbackName||'—');
+  const bookingName=allForPhone.length?allForPhone.reduce((a,b)=>a.date>b.date?a:b).name:null;
+  const name=fallbackName||bookingName||'—';
   // Total Spending — sum of all transactions for this member within the current calendar year (resets each Jan 1)
   const curYear=new Date().getFullYear();
   const totalSpending=(transactions||[]).filter(t=>t.memberPhone===phone&&t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
