@@ -851,6 +851,24 @@ app.post('/api/transactions', requireAuth, (req, res) => {
   }
 });
 
+// ── Delete Transaction ────────────────────────────────────────────────────────
+app.delete('/api/transactions/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    if (password !== MEMBER_REMOVE_PASSWORD) {
+      return res.status(403).json({ error: 'Incorrect password' });
+    }
+    const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+    db.prepare('DELETE FROM transactions WHERE id = ?').run(id);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Delete transaction error:', error);
+    res.status(500).json({ error: 'Failed to remove transaction' });
+  }
+});
+
 // ── Download DB Backup ────────────────────────────────────────────────────────
 app.get('/api/download-db', requireAuth, (req, res) => {
   try {

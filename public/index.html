@@ -874,6 +874,81 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 
   </div>
 
+  <!-- MEMBERSHIP ACCESS GATE MODAL -->
+  <div class="ov hidden" id="ov-membergate">
+    <div class="modal" style="max-width:360px">
+      <div class="mhdr"><div class="mtit">Membership Access</div><button class="mcls" onclick="closeOv('ov-membergate')">✕</button></div>
+      <div style="padding:20px 22px 22px">
+        <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">This area contains customer data. Please enter the access password to continue.</div>
+        <div class="fl" style="position:relative;margin-bottom:10px">
+          <label>Password</label>
+          <div style="position:relative">
+            <input id="mg-password" type="password" placeholder="Enter password" style="padding-right:38px" onkeydown="if(event.key==='Enter')submitMemberGate()">
+            <button type="button" onclick="toggleMgPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="mg-pw-toggle">👁</button>
+          </div>
+        </div>
+        <div id="mg-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px">Incorrect password.</div>
+        <button class="btn-pdf" style="width:100%;justify-content:center" onclick="submitMemberGate()">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTION DETAIL MODAL -->
+  <div class="ov hidden" id="ov-txdetail">
+    <div class="modal" style="max-width:440px">
+      <div class="mhdr"><div class="mtit">Transaction Detail</div><button class="mcls" onclick="closeOv('ov-txdetail')">✕</button></div>
+      <div style="padding:20px 22px 22px">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-radius:8px">
+            <span style="font-size:12px;color:var(--tx2);font-weight:600">DATE</span>
+            <span id="txd-date" style="font-size:13px;font-weight:600"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-radius:8px">
+            <span style="font-size:12px;color:var(--tx2);font-weight:600">MEMBER</span>
+            <div style="text-align:right"><div id="txd-name" style="font-size:13px;font-weight:600"></div><div id="txd-phone" style="font-size:11px;color:var(--tx2)"></div></div>
+          </div>
+          <div id="txd-promo-row" style="display:none;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-radius:8px">
+            <span style="font-size:12px;color:var(--tx2);font-weight:600">PROMO</span>
+            <div style="text-align:right"><div id="txd-promo-code" style="font-size:13px;font-weight:600"></div><div id="txd-promo-name" style="font-size:11px;color:var(--tx2)"></div></div>
+          </div>
+          <div style="border-top:0.5px solid var(--bd3);padding-top:10px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;font-size:13px">
+              <span style="color:var(--tx2)">Bill Amount</span>
+              <span id="txd-bill"></span>
+            </div>
+            <div id="txd-discount-row" style="display:none;justify-content:space-between;font-size:13px">
+              <span style="color:var(--tx2)">Discount</span>
+              <span id="txd-discount" style="color:#166534"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:0.5px solid var(--bd3);padding-top:8px;margin-top:2px">
+              <span>Final Total</span>
+              <span id="txd-final"></span>
+            </div>
+          </div>
+          <div id="txd-notes-row" style="display:none;padding:10px 14px;background:var(--bg2);border-radius:8px">
+            <div style="font-size:12px;color:var(--tx2);font-weight:600;margin-bottom:4px">NOTES</div>
+            <div id="txd-notes" style="font-size:13px"></div>
+          </div>
+        </div>
+        <div id="txd-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
+        <div id="txd-pw-section" style="display:none">
+          <div class="fl" style="position:relative;margin-bottom:10px">
+            <label>Admin & Manager Password</label>
+            <div style="position:relative">
+              <input id="txd-password" type="password" placeholder="Enter password" style="padding-right:38px">
+              <button type="button" onclick="toggleTxdPw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px" id="txd-pw-toggle">👁</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button style="flex:1;padding:10px;border-radius:8px;border:0.5px solid var(--bd2);background:var(--bg);color:var(--tx);cursor:pointer;font-size:13px;font-family:var(--font)" onclick="document.getElementById('txd-pw-section').style.display='none';document.getElementById('txd-error').style.display='none'">Cancel</button>
+            <button style="flex:1;padding:10px;border-radius:8px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="confirmRemoveTx()">Confirm Remove</button>
+          </div>
+        </div>
+        <button id="txd-remove-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="showTxRemovePw()">✕ Remove Transaction</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MEMBER DETAIL MODAL -->
   <div class="ov hidden" id="ov-memberdetail">
     <div class="modal" style="max-width:560px">
@@ -1903,7 +1978,54 @@ function poGet(){
 }
 
 /* ── VIEW SWITCH ── */
-function switchView(v){view=v;document.getElementById('tab-floor').classList.toggle('active',v==='floor');document.getElementById('tab-list').classList.toggle('active',v==='list');document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');document.getElementById('tab-membership').classList.toggle('active',v==='membership');document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');document.getElementById('vlist').classList.toggle('hidden',v!=='list');document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');if(v==='list')renderList();if(v==='analytics')loadAnalytics();if(v==='membership')loadMembership();}
+const MEMBERSHIP_GATE_PW='rahang tuna';
+let membershipUnlocked=false;
+
+function switchView(v){
+  if(v==='membership'&&!membershipUnlocked){
+    openMemberGate();
+    return;
+  }
+  view=v;
+  document.getElementById('tab-floor').classList.toggle('active',v==='floor');
+  document.getElementById('tab-list').classList.toggle('active',v==='list');
+  document.getElementById('tab-analytics').classList.toggle('active',v==='analytics');
+  document.getElementById('tab-membership').classList.toggle('active',v==='membership');
+  document.getElementById('vfloor').classList.toggle('hidden',v!=='floor');
+  document.getElementById('vlist').classList.toggle('hidden',v!=='list');
+  document.getElementById('vanalytics').classList.toggle('hidden',v!=='analytics');
+  document.getElementById('vmembership').classList.toggle('hidden',v!=='membership');
+  if(v==='list')renderList();
+  if(v==='analytics')loadAnalytics();
+  if(v==='membership')loadMembership();
+}
+
+function openMemberGate(){
+  document.getElementById('mg-password').value='';
+  document.getElementById('mg-password').type='password';
+  document.getElementById('mg-pw-toggle').textContent='👁';
+  document.getElementById('mg-error').style.display='none';
+  openOv('ov-membergate');
+  setTimeout(()=>document.getElementById('mg-password').focus(),100);
+}
+function toggleMgPw(){
+  const inp=document.getElementById('mg-password');
+  const btn=document.getElementById('mg-pw-toggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+function submitMemberGate(){
+  const pw=document.getElementById('mg-password').value;
+  if(pw===MEMBERSHIP_GATE_PW){
+    membershipUnlocked=true;
+    closeOv('ov-membergate');
+    switchView('membership');
+  } else {
+    document.getElementById('mg-error').style.display='block';
+    document.getElementById('mg-password').value='';
+    document.getElementById('mg-password').focus();
+  }
+}
 
 let memberSubTab='members';
 function switchMemberSubTab(t){
@@ -2777,7 +2899,7 @@ function renderList(){
 async function doRefresh(){const btn=document.getElementById('refbtn');btn.classList.add('spin');await loadAll();setTimeout(()=>btn.classList.remove('spin'),400);showToast('Refreshed');}
 function openOv(id){document.getElementById(id).classList.remove('hidden');}
 function closeOv(id){document.getElementById(id).classList.add('hidden');}
-['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-editpromo','ov-removepromo','ov-newtx','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
+['ov-ti','ov-res','ov-wi','ov-cf','ov-wl','ov-addmember','ov-editmember','ov-editmember-pw','ov-removemember','ov-addpromo','ov-editpromo','ov-removepromo','ov-newtx','ov-txdetail','ov-membergate','ov-memberdetail'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});});
 function showToast(msg,t){const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(t==='error'?' err':'');el.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>el.classList.remove('show'),2600);}
 function updClock(){const n=new Date();document.getElementById('clock').textContent=p2(n.getHours())+':'+p2(n.getMinutes());document.getElementById('dateline').textContent=n.toLocaleDateString('en-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 
@@ -3024,25 +3146,23 @@ async function loadMembership(){
 
 // Build per-phone all-time visit stats from bookings, optionally filtered by date range
 function memberStatsFor(phone,from,to,fallbackName){
-  const rel=bookings.filter(b=>b.phone&&b.phone.trim()===phone&&b.date>=from&&b.date<=to);
-  const visits=rel.length;
-  let lastVisit=rel.length?rel.reduce((a,b)=>a.date>b.date?a:b).date:null;
-  const totalPax=rel.reduce((s,b)=>s+(b.pax||0),0);
-  const avgPax=visits?Math.round(totalPax/visits):0;
-  // Last Visit also considers Transactions (all-time, not range-filtered) — a paid transaction is
-  // proof a visit happened even if staff forgot to close the booking on the floor plan.
-  const txForPhone=(transactions||[]).filter(t=>t.memberPhone===phone);
-  if(txForPhone.length){
-    const lastTxDate=txForPhone.reduce((a,t)=>a.date>t.date?a:t).date;
-    if(!lastVisit||lastTxDate>lastVisit)lastVisit=lastTxDate;
-  }
-  // Prefer most recent name from booking history (all-time, regardless of filter); fall back to the stored member name
-  // Name: prefer explicitly stored member name (staff may have edited it),
-  // fall back to most recent booking name, then fallbackName
-  const allForPhone=bookings.filter(b=>b.phone&&b.phone.trim()===phone&&b.name);
+  // ── Visits & Last Visit: from TRANSACTIONS (cashier-logged) within the date range ──
+  const txInRange=(transactions||[]).filter(t=>t.memberPhone===phone&&t.date>=from&&t.date<=to);
+  const visits=txInRange.length;
+  const lastVisit=txInRange.length?txInRange.reduce((a,t)=>a.date>t.date?a:t).date:null;
+
+  // ── Avg Pax: from floor plan BOOKINGS all-time (phone match), not range-filtered ──
+  // Floor plan data is used for pax context only — not for visit counting (avoids duplicates)
+  const allBookings=bookings.filter(b=>b.phone&&b.phone.trim()===phone);
+  const totalPax=allBookings.reduce((s,b)=>s+(b.pax||0),0);
+  const avgPax=allBookings.length?Math.round(totalPax/allBookings.length):0;
+
+  // ── Name: prefer explicitly stored member name, fall back to booking-derived ──
+  const allForPhone=allBookings.filter(b=>b.name);
   const bookingName=allForPhone.length?allForPhone.reduce((a,b)=>a.date>b.date?a:b).name:null;
   const name=fallbackName||bookingName||'—';
-  // Total Spending — sum of all transactions for this member within the current calendar year (resets each Jan 1)
+
+  // ── Total Spending: sum of all transactions in current calendar year ──
   const curYear=new Date().getFullYear();
   const totalSpending=(transactions||[]).filter(t=>t.memberPhone===phone&&t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
   const tier=getTier(totalSpending);
@@ -3316,7 +3436,7 @@ function openMemberDetail(id){
   if(!txns.length){
     listEl.innerHTML='<div style="padding:30px 20px;text-align:center;color:var(--tx3);font-size:13px">No transactions yet</div>';
   } else {
-    listEl.innerHTML=txns.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:0.5px solid var(--bd3);gap:10px">
+    listEl.innerHTML=txns.map(t=>`<div onclick="openTxDetail(${t.id},'memberdetail')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:0.5px solid var(--bd3);gap:10px;cursor:pointer" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'">
       <div style="font-size:11px;color:var(--tx2);width:70px;flex-shrink:0">${aFmtDate(t.date)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--tx)">${fmtRp(t.billAmount)}${t.promoCode?` <span style="display:inline-block;font-size:10px;font-weight:600;background:#1a1a1a;color:#fff;padding:1px 7px;border-radius:8px;margin-left:6px">${escapeHtml(t.promoCode)}</span>`:''}</div>
@@ -3695,6 +3815,98 @@ function removePromoFromEdit(){
 }
 
 // ═══ TRANSACTIONS ═══
+
+// ── Transaction Detail Modal ──
+let txDetailId=null;
+let txDetailCalledFrom=null; // 'memberdetail' or null (transaction history)
+
+function openTxDetail(id, calledFrom=null){
+  const t=transactions.find(tx=>tx.id===id);
+  if(!t)return;
+  txDetailId=id;
+  txDetailCalledFrom=calledFrom;
+
+  document.getElementById('txd-date').textContent=aFmtDate(t.date);
+  document.getElementById('txd-name').textContent=t.memberName||'—';
+  document.getElementById('txd-phone').textContent=t.memberPhone||'';
+
+  // Promo
+  const promoRow=document.getElementById('txd-promo-row');
+  if(t.promoCode){
+    const promo=promotions.find(p=>p.code===t.promoCode);
+    document.getElementById('txd-promo-code').textContent=t.promoCode;
+    document.getElementById('txd-promo-name').textContent=promo?promo.name:'(removed)';
+    promoRow.style.display='flex';
+  } else {
+    promoRow.style.display='none';
+  }
+
+  document.getElementById('txd-bill').textContent=fmtRp(t.billAmount);
+
+  const discountRow=document.getElementById('txd-discount-row');
+  if(t.discountAmount>0){
+    document.getElementById('txd-discount').textContent='– '+fmtRp(t.discountAmount);
+    discountRow.style.display='flex';
+  } else {
+    discountRow.style.display='none';
+  }
+
+  document.getElementById('txd-final').textContent=fmtRp(t.finalAmount);
+
+  const notesRow=document.getElementById('txd-notes-row');
+  if(t.notes){
+    document.getElementById('txd-notes').textContent=t.notes;
+    notesRow.style.display='block';
+  } else {
+    notesRow.style.display='none';
+  }
+
+  // Reset remove section
+  document.getElementById('txd-pw-section').style.display='none';
+  document.getElementById('txd-remove-btn').style.display='flex';
+  document.getElementById('txd-error').style.display='none';
+  document.getElementById('txd-password').value='';
+  document.getElementById('txd-password').type='password';
+  document.getElementById('txd-pw-toggle').textContent='👁';
+
+  openOv('ov-txdetail');
+}
+
+function showTxRemovePw(){
+  document.getElementById('txd-remove-btn').style.display='none';
+  document.getElementById('txd-pw-section').style.display='block';
+  document.getElementById('txd-password').focus();
+}
+
+function toggleTxdPw(){
+  const inp=document.getElementById('txd-password');
+  const btn=document.getElementById('txd-pw-toggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+async function confirmRemoveTx(){
+  const password=document.getElementById('txd-password').value;
+  const errEl=document.getElementById('txd-error');
+  errEl.style.display='none';
+  try{
+    await api(`/api/transactions/${txDetailId}`,{method:'DELETE',body:JSON.stringify({password})});
+    // Remove from local array
+    transactions=transactions.filter(t=>t.id!==txDetailId);
+    closeOv('ov-txdetail');
+    showToast('Transaction removed');
+    // Refresh depending on where it was opened from
+    if(txDetailCalledFrom==='memberdetail'){
+      // Re-open member detail to refresh the transaction list
+      openMemberDetail(detailMemberId);
+    }
+    renderTransactions();
+    renderMembers(); // update Total Spending + Visit Count
+  }catch(e){
+    errEl.textContent=e.message||'Incorrect password';
+    errEl.style.display='block';
+  }
+}
 let txRange='all';
 let txSort='date-desc';
 let txCustomFrom=null,txCustomTo=null;
@@ -3773,7 +3985,7 @@ function renderTransactions(){
   if(!rows.length){
     tbody.innerHTML='<tr><td colspan="8" class="empty-state">No transactions found</td></tr>';
   } else {
-    tbody.innerHTML=rows.map(t=>`<tr>
+    tbody.innerHTML=rows.map(t=>`<tr onclick="openTxDetail(${t.id})" style="cursor:pointer">
       <td>${aFmtDate(t.date)}</td>
       <td>${escapeHtml(t.memberName)}</td>
       <td>${escapeHtml(t.memberPhone)}</td>
