@@ -792,7 +792,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <div class="chart-title" style="margin:0">Available Promo</div>
           <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
         </div>
-        <div style="max-height:300px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
+        <div style="max-height:460px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
             <thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Min Purchase</th><th>Max Discount</th><th>Status</th><th>Trigger</th><th>Combine</th><th>Notes</th></tr></thead>
             <tbody id="promo-tbody"><tr><td colspan="9" class="empty-state">No promotions yet</td></tr></tbody>
@@ -4320,17 +4320,46 @@ function selectNtPromoById(id){
   updateTxPreview();
 }
 
+function getEligiblePromos(){
+  const bill=parseRpInput('ntBill');
+  // Get member context for filtering
+  let nextVisit=null;
+  let tierValue=null;
+  if(ntSelectedMember){
+    const txns=(transactions||[]).filter(t=>t.memberPhone===ntSelectedMember.phone);
+    nextVisit=txns.length+1;
+    const curYear=new Date().getFullYear();
+    const spending=txns.filter(t=>t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
+    const tier=getTier(spending);
+    tierValue=tier?tier.name.toLowerCase():'notier';
+  }
+  return promotions.filter(p=>{
+    if(!p.active)return false;
+    // minPurchase filter (only when bill is entered)
+    if(bill&&p.minPurchase&&bill<p.minPurchase)return false;
+    // Trigger type filtering
+    if(p.triggerType==='visit_number'){
+      // Only show if matches next visit number
+      if(nextVisit===null)return false; // no member selected, hide visit promos
+      return String(p.triggerValue)===String(nextVisit);
+    }
+    if(p.triggerType==='tier'){
+      // Only show if matches member's tier
+      if(tierValue===null)return false; // no member selected, hide tier promos
+      return p.triggerValue===tierValue;
+    }
+    return true; // manual promos always show
+  });
+}
+
 function ntPromoInput(){
   const q=document.getElementById('ntPromoSearch').value.trim().toLowerCase();
-  const bill=parseRpInput('ntBill');
-  // Filter: active, and bill meets minPurchase if set
-  const activePromos=promotions.filter(p=>p.active&&(!p.minPurchase||bill>=p.minPurchase||!bill));
+  const eligible=getEligiblePromos();
   if(!q){
-    renderNtPromoDropdown(activePromos);
+    renderNtPromoDropdown(eligible);
     return;
   }
-  const matches=activePromos.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q));
-  renderNtPromoDropdown(matches);
+  renderNtPromoDropdown(eligible.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)));
 }
 function renderNtPromoDropdown(matches){
   const dd=document.getElementById('ntPromo-ac');
@@ -4382,8 +4411,7 @@ function clearNtPromo2(){
 }
 function ntPromo2Input(){
   const q=document.getElementById('ntPromo2Search').value.trim().toLowerCase();
-  const bill=parseRpInput('ntBill');
-  const activeCombinable=promotions.filter(p=>p.active&&p.combinable&&(!ntSelectedPromo||p.id!==ntSelectedPromo.id)&&(!p.minPurchase||bill>=p.minPurchase||!bill));
+  const activeCombinable=getEligiblePromos().filter(p=>p.combinable&&(!ntSelectedPromo||p.id!==ntSelectedPromo.id));
   if(!q){
     renderNtPromo2Dropdown(activeCombinable);
     return;
