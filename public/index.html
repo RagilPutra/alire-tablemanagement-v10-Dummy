@@ -1019,10 +1019,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div id="nt-selected-member" style="display:none;font-size:12px;background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div class="fl">
         <label>Bill amount (Rp) <span style="color:#E24B4A">*</span></label>
-        <input id="ntBill" type="text" inputmode="numeric" placeholder="e.g. 350.000" oninput="fmtRpInput(this);updateTxPreview()">
+        <input id="ntBill" type="text" inputmode="numeric" placeholder="e.g. 350.000" oninput="fmtRpInput(this);updateTxPreview();if(document.getElementById('ntPromo-ac')&&!document.getElementById('ntPromo-ac').classList.contains('hidden'))ntPromoInput();">
       </div>
       <div id="nt-recommended-promo" style="display:none;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">⭐ Rekomendasi untuk member ini</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">⭐ Recommended for this member</div>
         <div id="nt-recommended-promo-btn" style="cursor:pointer;padding:8px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--bd2);font-size:13px" onclick="selectRecommendedPromo()"></div>
       </div>
       <div class="fl" style="position:relative">
@@ -1033,7 +1033,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div id="nt-selected-promo" style="display:none;font-size:12px;color:#7A5A1E;background:#FBF3DE;border:0.5px solid #E0B84A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div id="nt-promo2-section" style="display:none">
         <div class="fl" style="position:relative">
-          <label>Promo Tambahan — <span style="color:var(--tx2);font-weight:400">Combinable promos only</span></label>
+          <label>Additional Promo — <span style="color:var(--tx2);font-weight:400">Combinable promos only</span></label>
           <input id="ntPromo2Search" placeholder="Search combinable promo..." autocomplete="off" oninput="ntPromo2Input()" onfocus="ntPromo2Input()">
           <div class="ac-dropdown hidden" id="ntPromo2-ac"></div>
         </div>
@@ -1179,23 +1179,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <textarea id="apNotes" maxlength="300" placeholder="e.g. Only valid for dine-in, cannot be combined with other promos..."></textarea>
       </div>
       <div class="fl">
-        <label>Trigger Type <span style="font-size:11px;color:var(--tx2)">(optional — untuk promo otomatis)</span></label>
+        <label>Trigger Type <span style="font-size:11px;color:var(--tx2)">(optional — for automatic promos)</span></label>
         <select id="apTriggerType" onchange="toggleApTriggerValue()" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
-          <option value="manual">Manual (pilih bebas oleh kasir)</option>
-          <option value="visit_number">Kunjungan ke- (Visit Number)</option>
+          <option value="manual">Manual (cashier selects freely)</option>
+          <option value="visit_number">Specific Visit Number</option>
           <option value="tier">Tier Member</option>
         </select>
       </div>
       <div class="fl" id="apTriggerValueWrap" style="display:none">
-        <label id="apTriggerValueLabel">Nilai Trigger</label>
+        <label id="apTriggerValueLabel">Trigger Value</label>
         <select id="apTriggerValue" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
         </select>
       </div>
       <div class="fl">
-        <label>Bisa Digabung (Combinable)</label>
+        <label>Combinable</label>
         <select id="apCombinable" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
-          <option value="0">Tidak — hanya satu promo saja</option>
-          <option value="1">Ya — bisa digabung dengan promo lain</option>
+          <option value="0">No — single promo only</option>
+          <option value="1">Yes — can be combined with another promo</option>
         </select>
       </div>
       <div class="fl" style="position:relative">
@@ -1243,21 +1243,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div class="fl">
         <label>Trigger Type</label>
         <select id="epTriggerType" onchange="toggleEpTriggerValue()" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
-          <option value="manual">Manual (pilih bebas oleh kasir)</option>
-          <option value="visit_number">Kunjungan ke- (Visit Number)</option>
+          <option value="manual">Manual (cashier selects freely)</option>
+          <option value="visit_number">Specific Visit Number</option>
           <option value="tier">Tier Member</option>
         </select>
       </div>
       <div class="fl" id="epTriggerValueWrap" style="display:none">
-        <label id="epTriggerValueLabel">Nilai Trigger</label>
+        <label id="epTriggerValueLabel">Trigger Value</label>
         <select id="epTriggerValue" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
         </select>
       </div>
       <div class="fl">
-        <label>Bisa Digabung (Combinable)</label>
+        <label>Combinable</label>
         <select id="epCombinable" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
-          <option value="0">Tidak — hanya satu promo saja</option>
-          <option value="1">Ya — bisa digabung dengan promo lain</option>
+          <option value="0">No — single promo only</option>
+          <option value="1">Yes — can be combined with another promo</option>
         </select>
       </div>
       <div class="fl">
@@ -3741,7 +3741,7 @@ function parseRpInput(id){
 
 // ── Add Promotion ──
 // ── Trigger Type helpers ──
-const TRIGGER_VISIT_OPTIONS=[{v:'1',l:'Kunjungan ke-1'},{v:'2',l:'Kunjungan ke-2'},{v:'3',l:'Kunjungan ke-3'}];
+const TRIGGER_VISIT_OPTIONS=[{v:'1',l:'Visit 1'},{v:'2',l:'Visit 2'},{v:'3',l:'Visit 3'}];
 const TRIGGER_TIER_OPTIONS=[{v:'notier',l:'No Tier'},{v:'bronze',l:'Bronze'},{v:'silver',l:'Silver'},{v:'gold',l:'Gold'}];
 
 function setTriggerOptions(selectId,options,selectedVal=''){
@@ -3752,15 +3752,30 @@ function toggleTriggerValueWrap(prefix){
   const type=document.getElementById(prefix+'TriggerType').value;
   const wrap=document.getElementById(prefix+'TriggerValueWrap');
   const label=document.getElementById(prefix+'TriggerValueLabel');
-  const valSel=prefix+'TriggerValue';
+  const valId=prefix+'TriggerValue';
   if(type==='visit_number'){
     wrap.style.display='block';
-    label.textContent='Kunjungan ke-';
-    setTriggerOptions(valSel,TRIGGER_VISIT_OPTIONS);
+    label.textContent='Visit Number (e.g. 1, 2, 3, 10...)';
+    const el=document.getElementById(valId);
+    if(el&&el.tagName==='SELECT'){
+      const inp=document.createElement('input');
+      inp.type='number';inp.min='1';inp.id=valId;inp.placeholder='e.g. 1';
+      inp.style='padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%';
+      el.replaceWith(inp);
+    }
   } else if(type==='tier'){
     wrap.style.display='block';
-    label.textContent='Tier Member';
-    setTriggerOptions(valSel,TRIGGER_TIER_OPTIONS);
+    label.textContent='Member Tier';
+    const el=document.getElementById(valId);
+    if(el&&el.tagName==='INPUT'){
+      const sel=document.createElement('select');
+      sel.id=valId;
+      sel.style='padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%';
+      sel.innerHTML=TRIGGER_TIER_OPTIONS.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+      el.replaceWith(sel);
+    } else if(el){
+      setTriggerOptions(valId,TRIGGER_TIER_OPTIONS);
+    }
   } else {
     wrap.style.display='none';
   }
@@ -3867,8 +3882,11 @@ function openEditPromo(id){
   document.getElementById('epNotes').value=p.notes||'';
   document.getElementById('epTriggerType').value=p.triggerType||'manual';
   toggleEpTriggerValue();
-  if(p.triggerType&&p.triggerType!=='manual'&&p.triggerValue){
-    setTriggerOptions('epTriggerValue', p.triggerType==='visit_number'?TRIGGER_VISIT_OPTIONS:TRIGGER_TIER_OPTIONS, p.triggerValue);
+  if(p.triggerType==='visit_number'&&p.triggerValue){
+    const el=document.getElementById('epTriggerValue');
+    if(el)el.value=p.triggerValue;
+  } else if(p.triggerType==='tier'&&p.triggerValue){
+    setTriggerOptions('epTriggerValue',TRIGGER_TIER_OPTIONS,p.triggerValue);
   }
   document.getElementById('epCombinable').value=p.combinable?'1':'0';
   document.getElementById('epPassword').value='';
@@ -4267,12 +4285,10 @@ function computeRecommendedPromo(phone){
   const tier=getTier(spending);
   const tierValue=tier?tier.name.toLowerCase():'notier';
 
-  // Find recommended promo: visit_number promos take priority for visits 1-3
+  // Find recommended promo: visit_number promos take priority over tier promos
   let recommended=null;
-  if(nextVisit<=3){
-    recommended=promotions.find(p=>p.active&&p.triggerType==='visit_number'&&p.triggerValue===String(nextVisit));
-  }
-  // From visit 4+, or if no visit_number promo found, try tier promo
+  recommended=promotions.find(p=>p.active&&p.triggerType==='visit_number'&&String(p.triggerValue)===String(nextVisit));
+  // If no visit_number match, try tier promo
   if(!recommended){
     recommended=promotions.find(p=>p.active&&p.triggerType==='tier'&&p.triggerValue===tierValue);
   }
@@ -4282,13 +4298,14 @@ function computeRecommendedPromo(phone){
   ntRecommendedPromo=recommended;
   const discLabel=recommended.discountPct?` — ${recommended.discountPct}% off`:'';
   const minLabel=recommended.minPurchase?` (min ${fmtRp(recommended.minPurchase)})`:'';
-  recBtn.innerHTML=`<strong>${escapeHtml(recommended.code)}</strong>${discLabel}${minLabel} <span style="float:right;font-size:12px;color:var(--tx2)">Klik untuk pilih →</span>`;
+  recBtn.innerHTML=`<strong>${escapeHtml(recommended.code)}</strong>${discLabel}${minLabel} <span style="float:right;font-size:12px;color:var(--tx2)">Click to select →</span>`;
   recBox.style.display='block';
 }
 
 function selectRecommendedPromo(){
   if(!ntRecommendedPromo)return;
   selectNtPromoById(ntRecommendedPromo.id);
+  document.getElementById('nt-promo2-section').style.display='block';
 }
 
 function selectNtPromoById(id){
@@ -4305,14 +4322,14 @@ function selectNtPromoById(id){
 
 function ntPromoInput(){
   const q=document.getElementById('ntPromoSearch').value.trim().toLowerCase();
-  const dd=document.getElementById('ntPromo-ac');
-  const activePromos=promotions.filter(p=>p.active);
+  const bill=parseRpInput('ntBill');
+  // Filter: active, and bill meets minPurchase if set
+  const activePromos=promotions.filter(p=>p.active&&(!p.minPurchase||bill>=p.minPurchase||!bill));
   if(!q){
-    // Show all active promos when focused with empty input
-    renderNtPromoDropdown(activePromos.slice(0,5));
+    renderNtPromoDropdown(activePromos);
     return;
   }
-  const matches=activePromos.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)).slice(0,5);
+  const matches=activePromos.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q));
   renderNtPromoDropdown(matches);
 }
 function renderNtPromoDropdown(matches){
@@ -4365,12 +4382,13 @@ function clearNtPromo2(){
 }
 function ntPromo2Input(){
   const q=document.getElementById('ntPromo2Search').value.trim().toLowerCase();
-  const activeCombinable=promotions.filter(p=>p.active&&p.combinable&&(!ntSelectedPromo||p.id!==ntSelectedPromo.id));
+  const bill=parseRpInput('ntBill');
+  const activeCombinable=promotions.filter(p=>p.active&&p.combinable&&(!ntSelectedPromo||p.id!==ntSelectedPromo.id)&&(!p.minPurchase||bill>=p.minPurchase||!bill));
   if(!q){
-    renderNtPromo2Dropdown(activeCombinable.slice(0,5));
+    renderNtPromo2Dropdown(activeCombinable);
     return;
   }
-  renderNtPromo2Dropdown(activeCombinable.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)).slice(0,5));
+  renderNtPromo2Dropdown(activeCombinable.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q)));
 }
 function renderNtPromo2Dropdown(matches){
   const dd=document.getElementById('ntPromo2-ac');
