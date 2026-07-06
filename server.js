@@ -86,6 +86,9 @@ db.exec(`
     maxDiscount REAL NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
     notes TEXT,
+    triggerType TEXT DEFAULT 'manual',
+    triggerValue TEXT DEFAULT NULL,
+    combinable INTEGER NOT NULL DEFAULT 0,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -96,6 +99,8 @@ db.exec(`
     billAmount REAL NOT NULL,
     promoId INTEGER,
     promoCode TEXT,
+    promoId2 INTEGER DEFAULT NULL,
+    promoCode2 TEXT DEFAULT NULL,
     discountAmount REAL NOT NULL DEFAULT 0,
     finalAmount REAL NOT NULL,
     notes TEXT,
@@ -177,6 +182,44 @@ try {
   }
 } catch (e) {
   console.error('Migration error (promotions.notes):', e);
+}
+
+try {
+  const pcols2 = db.prepare("PRAGMA table_info(promotions)").all();
+  if (!pcols2.some(c => c.name === 'triggerType')) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN triggerType TEXT DEFAULT 'manual'`);
+    console.log('✅ Migration: added triggerType to promotions');
+  }
+  if (!pcols2.some(c => c.name === 'triggerValue')) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN triggerValue TEXT DEFAULT NULL`);
+    console.log('✅ Migration: added triggerValue to promotions');
+  }
+} catch (e) {
+  console.error('Migration error (promotions.trigger):', e);
+}
+
+try {
+  const pcols3 = db.prepare("PRAGMA table_info(promotions)").all();
+  if (!pcols3.some(c => c.name === 'combinable')) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN combinable INTEGER NOT NULL DEFAULT 0`);
+    console.log('✅ Migration: added combinable to promotions');
+  }
+} catch (e) {
+  console.error('Migration error (promotions.combinable):', e);
+}
+
+try {
+  const tcols = db.prepare("PRAGMA table_info(transactions)").all();
+  if (!tcols.some(c => c.name === 'promoId2')) {
+    db.exec(`ALTER TABLE transactions ADD COLUMN promoId2 INTEGER DEFAULT NULL`);
+    console.log('✅ Migration: added promoId2 to transactions');
+  }
+  if (!tcols.some(c => c.name === 'promoCode2')) {
+    db.exec(`ALTER TABLE transactions ADD COLUMN promoCode2 TEXT DEFAULT NULL`);
+    console.log('✅ Migration: added promoCode2 to transactions');
+  }
+} catch (e) {
+  console.error('Migration error (transactions.promo2):', e);
 }
 
 console.log('✓ SQLite database initialized');
@@ -673,7 +716,7 @@ app.get('/api/promotions', requireAuth, (req, res) => {
 
 app.post('/api/promotions', requireAuth, (req, res) => {
   try {
-    const { code, name, discountPct, minPurchase, maxDiscount, notes, password } = req.body;
+    const { code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable, password } = req.body;
     if (password !== MEMBER_REMOVE_PASSWORD) {
       return res.status(403).json({ error: 'Incorrect password' });
     }
@@ -692,14 +735,17 @@ app.post('/api/promotions', requireAuth, (req, res) => {
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotes = (notes || '').trim().slice(0, 300);
+    const cleanTriggerType = ['manual','visit_number','tier'].includes(triggerType) ? triggerType : 'manual';
+    const cleanTriggerValue = triggerValue ? triggerValue.trim() : null;
+    const cleanCombinable = combinable ? 1 : 0;
 
     const existing = db.prepare('SELECT * FROM promotions WHERE code = ?').get(cleanCode);
     if (existing) {
       return res.status(409).json({ error: `Promo code "${cleanCode}" already exists.` });
     }
 
-    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount, notes) VALUES (?, ?, ?, ?, ?, ?)');
-    const result = stmt.run(cleanCode, cleanName, pct, min, max, cleanNotes||null);
+    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, cleanNotes||null, cleanTriggerType, cleanTriggerValue, cleanCombinable);
     const newPromo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(result.lastInsertRowid);
     res.json(newPromo);
   } catch (error) {
@@ -730,7 +776,7 @@ app.delete('/api/promotions/:id', requireAuth, (req, res) => {
 app.put('/api/promotions/:id', requireAuth, (req, res) => {
   try {
     const { id } = req.params;
-    const { code, name, discountPct, minPurchase, maxDiscount, active, notes, password } = req.body;
+    const { code, name, discountPct, minPurchase, maxDiscount, active, notes, triggerType, triggerValue, combinable, password } = req.body;
     if (password !== MEMBER_REMOVE_PASSWORD) {
       return res.status(403).json({ error: 'Incorrect password' });
     }
@@ -741,12 +787,15 @@ app.put('/api/promotions/:id', requireAuth, (req, res) => {
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotesPut = (notes || '').trim().slice(0, 300);
+    const cleanTriggerTypePut = ['manual','visit_number','tier'].includes(triggerType) ? triggerType : 'manual';
+    const cleanTriggerValuePut = triggerValue ? triggerValue.trim() : null;
+    const cleanCombinablePut = combinable ? 1 : 0;
     const min = parseFloat(minPurchase) || 0;
     const max = parseFloat(maxDiscount) || 0;
     const conflict = db.prepare('SELECT * FROM promotions WHERE code = ? AND id != ?').get(cleanCode, id);
     if (conflict) return res.status(409).json({ error: `Promo code "${cleanCode}" is already used by another promotion.` });
-    const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=? WHERE id=?');
-    const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, id);
+    const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=?, triggerType=?, triggerValue=?, combinable=? WHERE id=?');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, cleanTriggerTypePut, cleanTriggerValuePut, cleanCombinablePut, id);
     if (result.changes === 0) return res.status(404).json({ error: 'Promotion not found' });
     // Keep past transactions in sync — if the code was renamed, update all transactions that used this promo
     db.prepare('UPDATE transactions SET promoCode = ? WHERE promoId = ?').run(cleanCode, id);
@@ -791,7 +840,7 @@ app.get('/api/transactions', requireAuth, (req, res) => {
 
 app.post('/api/transactions', requireAuth, (req, res) => {
   try {
-    const { phone, billAmount, promoId, notes, date } = req.body;
+    const { phone, billAmount, promoId, promoId2, notes, date } = req.body;
 
     if (!phone || !phone.trim()) {
       return res.status(400).json({ error: 'Member is required' });
@@ -809,45 +858,58 @@ app.post('/api/transactions', requireAuth, (req, res) => {
     let discountAmount = 0;
     let promoCode = null;
     let resolvedPromoId = null;
+    let promoCode2 = null;
+    let resolvedPromoId2 = null;
+
+    // Helper to calculate discount for a promo
+    function calcPromoDiscount(pid) {
+      const promo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(pid);
+      if (!promo) throw new Error('Selected promotion no longer exists');
+      if (!promo.active) throw new Error('This promotion is no longer active');
+      if (promo.minPurchase > 0 && bill < promo.minPurchase) {
+        throw new Error(`Bill amount is below the minimum purchase (Rp ${promo.minPurchase.toLocaleString('id-ID')}) for this promo`);
+      }
+      let disc = 0;
+      if (promo.discountPct) {
+        disc = bill * (promo.discountPct / 100);
+        if (promo.maxDiscount > 0 && disc > promo.maxDiscount) disc = promo.maxDiscount;
+        disc = Math.round(disc);
+      }
+      return { promo, disc };
+    }
 
     if (promoId) {
-      const promo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(promoId);
-      if (!promo) {
-        return res.status(404).json({ error: 'Selected promotion no longer exists' });
-      }
-      if (!promo.active) {
-        return res.status(400).json({ error: 'This promotion is no longer active' });
-      }
-      if (promo.minPurchase > 0 && bill < promo.minPurchase) {
-        return res.status(400).json({ error: `Bill amount is below the minimum purchase (Rp ${promo.minPurchase.toLocaleString('id-ID')}) for this promo` });
-      }
-      if (promo.discountPct) {
-        let calcDiscount = bill * (promo.discountPct / 100);
-        if (promo.maxDiscount > 0 && calcDiscount > promo.maxDiscount) {
-          calcDiscount = promo.maxDiscount;
-        }
-        discountAmount = Math.round(calcDiscount);
-      }
+      const { promo, disc } = calcPromoDiscount(promoId);
+      discountAmount += disc;
       promoCode = promo.code;
       resolvedPromoId = promo.id;
+    }
+
+    if (promoId2) {
+      if (!promoId) return res.status(400).json({ error: 'Promo 2 requires Promo 1 to be selected first' });
+      const { promo, disc } = calcPromoDiscount(promoId2);
+      if (!promo.combinable) return res.status(400).json({ error: 'This promotion cannot be combined' });
+      discountAmount += disc;
+      promoCode2 = promo.code;
+      resolvedPromoId2 = promo.id;
     }
 
     const finalAmount = Math.max(0, bill - discountAmount);
     const txnDate = date || new Date().toISOString().slice(0, 10);
 
     const stmt = db.prepare(`
-      INSERT INTO transactions (memberPhone, memberName, billAmount, promoId, promoCode, discountAmount, finalAmount, notes, date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO transactions (memberPhone, memberName, billAmount, promoId, promoCode, promoId2, promoCode2, discountAmount, finalAmount, notes, date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
-      member.phone, member.name, bill, resolvedPromoId, promoCode, discountAmount, finalAmount,
-      (notes || '').trim().slice(0, 200), txnDate
+      member.phone, member.name, bill, resolvedPromoId, promoCode, resolvedPromoId2, promoCode2,
+      discountAmount, finalAmount, (notes || '').trim().slice(0, 200), txnDate
     );
     const newTxn = db.prepare('SELECT * FROM transactions WHERE id = ?').get(result.lastInsertRowid);
     res.json(newTxn);
   } catch (error) {
     console.error('Create transaction error:', error);
-    res.status(500).json({ error: 'Failed to record transaction' });
+    res.status(500).json({ error: error.message || 'Failed to record transaction' });
   }
 });
 
