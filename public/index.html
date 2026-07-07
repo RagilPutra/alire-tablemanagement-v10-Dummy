@@ -790,7 +790,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div class="chart-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
           <div class="chart-title" style="margin:0">Available Promo</div>
-          <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
+          <div style="display:flex;align-items:center;gap:10px">
+            <select id="promo-sort-select" onchange="renderPromotions()" style="padding:6px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:12px;font-family:var(--font);cursor:pointer">
+              <option value="status-new">Active first, then newest</option>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="active">Active only</option>
+              <option value="inactive">Inactive only</option>
+              <option value="combinable">Combinable only</option>
+              <option value="not-combinable">Not Combinable only</option>
+            </select>
+            <button class="btn-pdf" onclick="openAddPromo()">+ Add Promotion</button>
+          </div>
         </div>
         <div style="max-height:460px;overflow-y:auto;border:0.5px solid var(--bd3);border-radius:8px">
           <table class="repeat-table">
@@ -3713,20 +3724,47 @@ async function loadPromotions(){
 }
 
 function sortPromotions(){
+  // default sort used after add/edit — active first then newest
   promotions.sort((a,b)=>{
     if(b.active!==a.active)return b.active-a.active;
     return b.id-a.id;
   });
 }
 
+function getFilteredSortedPromos(){
+  const sort=(document.getElementById('promo-sort-select')?.value)||'status-new';
+  let list=promotions.slice();
+
+  // Filter first
+  if(sort==='active') list=list.filter(p=>p.active);
+  else if(sort==='inactive') list=list.filter(p=>!p.active);
+  else if(sort==='combinable') list=list.filter(p=>p.combinable);
+  else if(sort==='not-combinable') list=list.filter(p=>!p.combinable);
+
+  // Then sort
+  if(sort==='newest'||sort==='active'||sort==='inactive'||sort==='combinable'||sort==='not-combinable'){
+    list.sort((a,b)=>b.id-a.id);
+  } else if(sort==='oldest'){
+    list.sort((a,b)=>a.id-b.id);
+  } else {
+    // status-new: active first, then newest within each group
+    list.sort((a,b)=>{
+      if(b.active!==a.active)return b.active-a.active;
+      return b.id-a.id;
+    });
+  }
+  return list;
+}
+
 function renderPromotions(){
   const tbody=document.getElementById('promo-tbody');
   if(!tbody)return;
-  if(!promotions.length){
-    tbody.innerHTML='<tr><td colspan="9" class="empty-state">No promotions yet</td></tr>';
+  const list=getFilteredSortedPromos();
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="9" class="empty-state">No promotions found</td></tr>';
     return;
   }
-  tbody.innerHTML=promotions.map(p=>{
+  tbody.innerHTML=list.map(p=>{
     let triggerLabel='—';
     if(p.triggerType==='visit_number')triggerLabel=`Visit ${p.triggerValue}`;
     else if(p.triggerType==='tier')triggerLabel=p.triggerValue?p.triggerValue.charAt(0).toUpperCase()+p.triggerValue.slice(1):'—';
@@ -4324,12 +4362,12 @@ function computeRecommendedPromo(phone){
   const tier=getTier(spending);
   const tierValue=tier?tier.name.toLowerCase():'notier';
 
-  // Find recommended promo from eligible list: visit > birthday > tier priority
+  // Find recommended promo from eligible list: visit > tier > birthday priority
   const eligible=getEligiblePromos();
   let recommended=null;
   recommended=eligible.find(p=>p.triggerType==='visit_number');
-  if(!recommended) recommended=eligible.find(p=>p.triggerType==='birthday');
   if(!recommended) recommended=eligible.find(p=>p.triggerType==='tier');
+  if(!recommended) recommended=eligible.find(p=>p.triggerType==='birthday');
 
   if(!recommended)return;
 
