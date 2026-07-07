@@ -1183,13 +1183,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <select id="apTriggerType" onchange="toggleApTriggerValue()" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
           <option value="manual">Manual (cashier selects freely)</option>
           <option value="visit_number">Specific Visit Number</option>
-          <option value="tier">Tier Member</option>
+          <option value="tier">Member Tier</option>
+          <option value="birthday">Birthday</option>
         </select>
       </div>
       <div class="fl" id="apTriggerValueWrap" style="display:none">
         <label id="apTriggerValueLabel">Trigger Value</label>
         <select id="apTriggerValue" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
         </select>
+      </div>
+      <div class="two-col" id="apBirthdayDaysWrap" style="display:none">
+        <div class="fl">
+          <label>Days Before Birthday</label>
+          <input id="apDaysBefore" type="number" min="0" max="30" value="5">
+        </div>
+        <div class="fl">
+          <label>Days After Birthday</label>
+          <input id="apDaysAfter" type="number" min="0" max="30" value="5">
+        </div>
       </div>
       <div class="fl">
         <label>Combinable</label>
@@ -1245,13 +1256,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <select id="epTriggerType" onchange="toggleEpTriggerValue()" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
           <option value="manual">Manual (cashier selects freely)</option>
           <option value="visit_number">Specific Visit Number</option>
-          <option value="tier">Tier Member</option>
+          <option value="tier">Member Tier</option>
+          <option value="birthday">Birthday</option>
         </select>
       </div>
       <div class="fl" id="epTriggerValueWrap" style="display:none">
         <label id="epTriggerValueLabel">Trigger Value</label>
         <select id="epTriggerValue" style="padding:7px 10px;border:0.5px solid var(--bd2);border-radius:8px;background:var(--bg);color:var(--tx);font-size:13px;font-family:var(--font);width:100%">
         </select>
+      </div>
+      <div class="two-col" id="epBirthdayDaysWrap" style="display:none">
+        <div class="fl">
+          <label>Days Before Birthday</label>
+          <input id="epDaysBefore" type="number" min="0" max="30" value="5">
+        </div>
+        <div class="fl">
+          <label>Days After Birthday</label>
+          <input id="epDaysAfter" type="number" min="0" max="30" value="5">
+        </div>
       </div>
       <div class="fl">
         <label>Combinable</label>
@@ -3708,6 +3730,7 @@ function renderPromotions(){
     let triggerLabel='—';
     if(p.triggerType==='visit_number')triggerLabel=`Visit ${p.triggerValue}`;
     else if(p.triggerType==='tier')triggerLabel=p.triggerValue?p.triggerValue.charAt(0).toUpperCase()+p.triggerValue.slice(1):'—';
+    else if(p.triggerType==='birthday')triggerLabel=`Birthday (±${p.daysBefore??5}/${p.daysAfter??5}d)`;
     return`<tr onclick="openEditPromo(${p.id})" style="cursor:pointer">
       <td><strong>${escapeHtml(p.code)}</strong></td>
       <td>${escapeHtml(p.name)}</td>
@@ -3753,6 +3776,9 @@ function toggleTriggerValueWrap(prefix){
   const wrap=document.getElementById(prefix+'TriggerValueWrap');
   const label=document.getElementById(prefix+'TriggerValueLabel');
   const valId=prefix+'TriggerValue';
+  const bdWrap=document.getElementById(prefix+'BirthdayDaysWrap');
+  // Hide birthday days by default
+  if(bdWrap)bdWrap.style.display='none';
   if(type==='visit_number'){
     wrap.style.display='block';
     label.textContent='Visit Number (e.g. 1, 2, 3, 10...)';
@@ -3776,6 +3802,9 @@ function toggleTriggerValueWrap(prefix){
     } else if(el){
       setTriggerOptions(valId,TRIGGER_TIER_OPTIONS);
     }
+  } else if(type==='birthday'){
+    wrap.style.display='none';
+    if(bdWrap)bdWrap.style.display='grid';
   } else {
     wrap.style.display='none';
   }
@@ -3792,6 +3821,9 @@ function openAddPromo(){
   document.getElementById('apNotes').value='';
   document.getElementById('apTriggerType').value='manual';
   document.getElementById('apTriggerValueWrap').style.display='none';
+  document.getElementById('apBirthdayDaysWrap').style.display='none';
+  document.getElementById('apDaysBefore').value=5;
+  document.getElementById('apDaysAfter').value=5;
   document.getElementById('apCombinable').value='0';
   document.getElementById('apPassword').value='';
   document.getElementById('apPassword').type='password';
@@ -3813,8 +3845,10 @@ async function submitAddPromo(){
   const maxDiscount=parseRpInput('apMax');
   const notes=document.getElementById('apNotes').value.trim();
   const triggerType=document.getElementById('apTriggerType').value;
-  const triggerValue=triggerType!=='manual'?document.getElementById('apTriggerValue').value:null;
+  const triggerValue=triggerType!=='manual'&&triggerType!=='birthday'?document.getElementById('apTriggerValue').value:null;
   const combinable=document.getElementById('apCombinable').value==='1';
+  const daysBefore=document.getElementById('apDaysBefore').value||5;
+  const daysAfter=document.getElementById('apDaysAfter').value||5;
   const password=document.getElementById('apPassword').value;
   const errEl=document.getElementById('ap-error');
   errEl.style.display='none';
@@ -3822,7 +3856,7 @@ async function submitAddPromo(){
   if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
   if(discountPct&&(discountPct<1||discountPct>100)){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
-    const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,notes,triggerType,triggerValue,combinable,password})});
+    const p=await api('/api/promotions',{method:'POST',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,notes,triggerType,triggerValue,combinable,daysBefore,daysAfter,password})});
     promotions.unshift(p);
     sortPromotions();
     closeOv('ov-addpromo');
@@ -3887,6 +3921,9 @@ function openEditPromo(id){
     if(el)el.value=p.triggerValue;
   } else if(p.triggerType==='tier'&&p.triggerValue){
     setTriggerOptions('epTriggerValue',TRIGGER_TIER_OPTIONS,p.triggerValue);
+  } else if(p.triggerType==='birthday'){
+    document.getElementById('epDaysBefore').value=p.daysBefore??5;
+    document.getElementById('epDaysAfter').value=p.daysAfter??5;
   }
   document.getElementById('epCombinable').value=p.combinable?'1':'0';
   document.getElementById('epPassword').value='';
@@ -3910,8 +3947,10 @@ async function submitEditPromo(){
   const active=document.getElementById('epActive').value==='1';
   const notes=document.getElementById('epNotes').value.trim();
   const triggerType=document.getElementById('epTriggerType').value;
-  const triggerValue=triggerType!=='manual'?document.getElementById('epTriggerValue').value:null;
+  const triggerValue=triggerType!=='manual'&&triggerType!=='birthday'?document.getElementById('epTriggerValue').value:null;
   const combinable=document.getElementById('epCombinable').value==='1';
+  const daysBefore=document.getElementById('epDaysBefore').value||5;
+  const daysAfter=document.getElementById('epDaysAfter').value||5;
   const password=document.getElementById('epPassword').value;
   const errEl=document.getElementById('ep-error');
   errEl.style.display='none';
@@ -3919,7 +3958,7 @@ async function submitEditPromo(){
   if(!name){errEl.textContent='Promo name is required.';errEl.style.display='block';return;}
   if(discountPct&&(discountPct<1||discountPct>100)){errEl.textContent='Discount must be between 1 and 100%.';errEl.style.display='block';return;}
   try{
-    const updated=await api(`/api/promotions/${editPromoId}`,{method:'PUT',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,active,notes,triggerType,triggerValue,combinable,password})});
+    const updated=await api(`/api/promotions/${editPromoId}`,{method:'PUT',body:JSON.stringify({code,name,discountPct,minPurchase,maxDiscount,active,notes,triggerType,triggerValue,combinable,daysBefore,daysAfter,password})});
     const idx=promotions.findIndex(p=>p.id===editPromoId);
     if(idx>=0)promotions[idx]=updated;
     sortPromotions();
@@ -4285,13 +4324,12 @@ function computeRecommendedPromo(phone){
   const tier=getTier(spending);
   const tierValue=tier?tier.name.toLowerCase():'notier';
 
-  // Find recommended promo: visit_number promos take priority over tier promos
+  // Find recommended promo from eligible list: visit > birthday > tier priority
+  const eligible=getEligiblePromos();
   let recommended=null;
-  recommended=promotions.find(p=>p.active&&p.triggerType==='visit_number'&&String(p.triggerValue)===String(nextVisit));
-  // If no visit_number match, try tier promo
-  if(!recommended){
-    recommended=promotions.find(p=>p.active&&p.triggerType==='tier'&&p.triggerValue===tierValue);
-  }
+  recommended=eligible.find(p=>p.triggerType==='visit_number');
+  if(!recommended) recommended=eligible.find(p=>p.triggerType==='birthday');
+  if(!recommended) recommended=eligible.find(p=>p.triggerType==='tier');
 
   if(!recommended)return;
 
@@ -4322,33 +4360,66 @@ function selectNtPromoById(id){
 
 function getEligiblePromos(){
   const bill=parseRpInput('ntBill');
-  // Get member context for filtering
   let nextVisit=null;
   let tierValue=null;
+  let memberBirthday=null;
+  let memberPhone=null;
+
   if(ntSelectedMember){
-    const txns=(transactions||[]).filter(t=>t.memberPhone===ntSelectedMember.phone);
+    memberPhone=ntSelectedMember.phone;
+    const txns=(transactions||[]).filter(t=>t.memberPhone===memberPhone);
     nextVisit=txns.length+1;
     const curYear=new Date().getFullYear();
     const spending=txns.filter(t=>t.date.startsWith(curYear+'-')).reduce((s,t)=>s+t.finalAmount,0);
     const tier=getTier(spending);
     tierValue=tier?tier.name.toLowerCase():'notier';
+    // Get birthday from members array
+    const mem=members.find(m=>m.phone===memberPhone);
+    if(mem&&mem.birthday)memberBirthday=mem.birthday; // YYYY-MM-DD
   }
+
+  const today=new Date();
+  const curYear=today.getFullYear();
+
   return promotions.filter(p=>{
     if(!p.active)return false;
-    // minPurchase filter (only when bill is entered)
     if(bill&&p.minPurchase&&bill<p.minPurchase)return false;
-    // Trigger type filtering
+
     if(p.triggerType==='visit_number'){
-      // Only show if matches next visit number
-      if(nextVisit===null)return false; // no member selected, hide visit promos
+      if(nextVisit===null)return false;
       return String(p.triggerValue)===String(nextVisit);
     }
     if(p.triggerType==='tier'){
-      // Only show if matches member's tier
-      if(tierValue===null)return false; // no member selected, hide tier promos
+      if(tierValue===null)return false;
       return p.triggerValue===tierValue;
     }
-    return true; // manual promos always show
+    if(p.triggerType==='birthday'){
+      if(!memberBirthday||!memberPhone)return false;
+      // Check birthday window (handles year boundary)
+      const[y,mo,d]=memberBirthday.split('-').map(Number);
+      // Build birthday date for this year and next year
+      const bdayThisYear=new Date(curYear,mo-1,d);
+      const bdayNextYear=new Date(curYear+1,mo-1,d);
+      const bdayLastYear=new Date(curYear-1,mo-1,d);
+      const daysBefore=p.daysBefore??5;
+      const daysAfter=p.daysAfter??5;
+      const MS=86400000;
+      const inWindow=(bday)=>{
+        const windowStart=new Date(bday.getTime()-daysBefore*MS);
+        const windowEnd=new Date(bday.getTime()+daysAfter*MS);
+        return today>=windowStart&&today<=windowEnd;
+      };
+      const eligible=inWindow(bdayThisYear)||inWindow(bdayNextYear)||inWindow(bdayLastYear);
+      if(!eligible)return false;
+      // Check once-per-year: has this member used this promo this year?
+      const usedThisYear=(transactions||[]).some(t=>
+        t.memberPhone===memberPhone&&
+        (t.promoId===p.id||t.promoId2===p.id)&&
+        t.date.startsWith(curYear+'-')
+      );
+      return !usedThisYear;
+    }
+    return true; // manual
   });
 }
 

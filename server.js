@@ -89,6 +89,8 @@ db.exec(`
     triggerType TEXT DEFAULT 'manual',
     triggerValue TEXT DEFAULT NULL,
     combinable INTEGER NOT NULL DEFAULT 0,
+    daysBefore INTEGER DEFAULT 5,
+    daysAfter INTEGER DEFAULT 5,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -206,6 +208,20 @@ try {
   }
 } catch (e) {
   console.error('Migration error (promotions.combinable):', e);
+}
+
+try {
+  const pcols4 = db.prepare("PRAGMA table_info(promotions)").all();
+  if (!pcols4.some(c => c.name === 'daysBefore')) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN daysBefore INTEGER DEFAULT 5`);
+    console.log('✅ Migration: added daysBefore to promotions');
+  }
+  if (!pcols4.some(c => c.name === 'daysAfter')) {
+    db.exec(`ALTER TABLE promotions ADD COLUMN daysAfter INTEGER DEFAULT 5`);
+    console.log('✅ Migration: added daysAfter to promotions');
+  }
+} catch (e) {
+  console.error('Migration error (promotions.birthday fields):', e);
 }
 
 try {
@@ -716,7 +732,7 @@ app.get('/api/promotions', requireAuth, (req, res) => {
 
 app.post('/api/promotions', requireAuth, (req, res) => {
   try {
-    const { code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable, password } = req.body;
+    const { code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable, daysBefore, daysAfter, password } = req.body;
     if (password !== MEMBER_REMOVE_PASSWORD) {
       return res.status(403).json({ error: 'Incorrect password' });
     }
@@ -735,17 +751,19 @@ app.post('/api/promotions', requireAuth, (req, res) => {
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotes = (notes || '').trim().slice(0, 300);
-    const cleanTriggerType = ['manual','visit_number','tier'].includes(triggerType) ? triggerType : 'manual';
+    const cleanTriggerType = ['manual','visit_number','tier','birthday'].includes(triggerType) ? triggerType : 'manual';
     const cleanTriggerValue = triggerValue ? triggerValue.trim() : null;
     const cleanCombinable = combinable ? 1 : 0;
+    const cleanDaysBefore = parseInt(daysBefore) >= 0 ? parseInt(daysBefore) : 5;
+    const cleanDaysAfter = parseInt(daysAfter) >= 0 ? parseInt(daysAfter) : 5;
 
     const existing = db.prepare('SELECT * FROM promotions WHERE code = ?').get(cleanCode);
     if (existing) {
       return res.status(409).json({ error: `Promo code "${cleanCode}" already exists.` });
     }
 
-    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    const result = stmt.run(cleanCode, cleanName, pct, min, max, cleanNotes||null, cleanTriggerType, cleanTriggerValue, cleanCombinable);
+    const stmt = db.prepare('INSERT INTO promotions (code, name, discountPct, minPurchase, maxDiscount, notes, triggerType, triggerValue, combinable, daysBefore, daysAfter) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, cleanNotes||null, cleanTriggerType, cleanTriggerValue, cleanCombinable, cleanDaysBefore, cleanDaysAfter);
     const newPromo = db.prepare('SELECT * FROM promotions WHERE id = ?').get(result.lastInsertRowid);
     res.json(newPromo);
   } catch (error) {
@@ -776,7 +794,7 @@ app.delete('/api/promotions/:id', requireAuth, (req, res) => {
 app.put('/api/promotions/:id', requireAuth, (req, res) => {
   try {
     const { id } = req.params;
-    const { code, name, discountPct, minPurchase, maxDiscount, active, notes, triggerType, triggerValue, combinable, password } = req.body;
+    const { code, name, discountPct, minPurchase, maxDiscount, active, notes, triggerType, triggerValue, combinable, daysBefore, daysAfter, password } = req.body;
     if (password !== MEMBER_REMOVE_PASSWORD) {
       return res.status(403).json({ error: 'Incorrect password' });
     }
@@ -787,15 +805,17 @@ app.put('/api/promotions/:id', requireAuth, (req, res) => {
     const cleanCode = code.trim().toUpperCase().slice(0, 20);
     const cleanName = name.trim().slice(0, 50);
     const cleanNotesPut = (notes || '').trim().slice(0, 300);
-    const cleanTriggerTypePut = ['manual','visit_number','tier'].includes(triggerType) ? triggerType : 'manual';
+    const cleanTriggerTypePut = ['manual','visit_number','tier','birthday'].includes(triggerType) ? triggerType : 'manual';
     const cleanTriggerValuePut = triggerValue ? triggerValue.trim() : null;
     const cleanCombinablePut = combinable ? 1 : 0;
+    const cleanDaysBeforePut = parseInt(daysBefore) >= 0 ? parseInt(daysBefore) : 5;
+    const cleanDaysAfterPut = parseInt(daysAfter) >= 0 ? parseInt(daysAfter) : 5;
     const min = parseFloat(minPurchase) || 0;
     const max = parseFloat(maxDiscount) || 0;
     const conflict = db.prepare('SELECT * FROM promotions WHERE code = ? AND id != ?').get(cleanCode, id);
     if (conflict) return res.status(409).json({ error: `Promo code "${cleanCode}" is already used by another promotion.` });
-    const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=?, triggerType=?, triggerValue=?, combinable=? WHERE id=?');
-    const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, cleanTriggerTypePut, cleanTriggerValuePut, cleanCombinablePut, id);
+    const stmt = db.prepare('UPDATE promotions SET code=?, name=?, discountPct=?, minPurchase=?, maxDiscount=?, active=?, notes=?, triggerType=?, triggerValue=?, combinable=?, daysBefore=?, daysAfter=? WHERE id=?');
+    const result = stmt.run(cleanCode, cleanName, pct, min, max, active ? 1 : 0, cleanNotesPut||null, cleanTriggerTypePut, cleanTriggerValuePut, cleanCombinablePut, cleanDaysBeforePut, cleanDaysAfterPut, id);
     if (result.changes === 0) return res.status(404).json({ error: 'Promotion not found' });
     // Keep past transactions in sync — if the code was renamed, update all transactions that used this promo
     db.prepare('UPDATE transactions SET promoCode = ? WHERE promoId = ?').run(cleanCode, id);
