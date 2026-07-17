@@ -2149,6 +2149,7 @@ function hasConflict(tid,date,time,excId,duration){
     if(b.id===excId)return false; // Skip the booking being edited
     if(b.date!==date)return false; // Different date, no conflict
     if(!allTids(b).includes(String(tid)))return false; // Different table, no conflict
+    if(b.endedAt)return false; // Session already ended, table is free
     
     // Check time window overlap
     const existStart=timeToMinutes(b.time);
