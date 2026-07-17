@@ -2326,8 +2326,8 @@ function openTI(tid){
   // Show bookings for the currently-viewed floor date
   const viewDate=afd();
   const isToday=viewDate===today();
-  const dir=bookings.filter(b=>b.date===viewDate&&String(b.tableId)===String(tid));
-  const asc=bookings.filter(b=>b.date===viewDate&&String(b.tableId)!==String(tid)&&(b.combos||[]).map(String).includes(String(tid)));
+  const dir=bookings.filter(b=>b.date===viewDate&&String(b.tableId)===String(tid)&&!b.endedAt);
+  const asc=bookings.filter(b=>b.date===viewDate&&String(b.tableId)!==String(tid)&&!b.endedAt&&(b.combos||[]).map(String).includes(String(tid)));
   const all=[...dir,...asc].sort((a,b)=>a.time.localeCompare(b.time));
   const body=document.getElementById('ti-body');
   if(!all.length){body.innerHTML=`<div class="no-res">No reservations for ${isToday?'today':fmtSh(viewDate)} at this table</div>`;}
