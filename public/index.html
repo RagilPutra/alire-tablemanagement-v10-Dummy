@@ -816,7 +816,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
     <div id="msub-tx" class="hidden">
       <div class="summary-grid">
         <div class="sum-card"><div class="sum-value" id="tx-total">0</div><div class="sum-label">Total Transactions</div><div class="sum-sub" id="tx-total-sub">—</div></div>
-        <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">after discounts</div></div>
+        <div class="sum-card"><div class="sum-value" id="tx-revenue">Rp 0</div><div class="sum-label">Total Revenue</div><div class="sum-sub" id="tx-revenue-sub">incl. 5% service + 10% PB1</div></div>
         <div class="sum-card"><div class="sum-value" id="tx-discount">Rp 0</div><div class="sum-label">Total Discounts Given</div><div class="sum-sub" id="tx-discount-sub">—</div></div>
       </div>
 
@@ -934,6 +934,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
             <div id="txd-discount-row" style="display:none;justify-content:space-between;font-size:13px">
               <span style="color:var(--tx2)">Discount</span>
               <span id="txd-discount" style="color:#166534"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px">
+              <span style="color:var(--tx2)">Service Charge (5%)</span>
+              <span id="txd-service"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px">
+              <span style="color:var(--tx2)">PB1 Tax (10%)</span>
+              <span id="txd-pb1"></span>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:0.5px solid var(--bd3);padding-top:8px;margin-top:2px">
               <span>Final Total</span>
@@ -1057,7 +1065,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
       <div id="nt-error" style="display:none;font-size:12px;color:#791F1F;background:#FCEBEB;border:0.5px solid #E24B4A;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:4px"><span>Bill Amount</span><span id="ntPreviewBill">Rp 0</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:6px" id="ntPreviewDiscountRow"><span>Discount</span><span id="ntPreviewDiscount">– Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:4px" id="ntPreviewDiscountRow"><span>Discount</span><span id="ntPreviewDiscount">– Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:4px"><span>Service Charge (5%)</span><span id="ntPreviewService">+ Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:6px"><span>PB1 Tax (10%)</span><span id="ntPreviewPB1">+ Rp 0</span></div>
         <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding-top:6px;border-top:0.5px solid var(--bd3)"><span>Final Total</span><span id="ntPreviewFinal">Rp 0</span></div>
       </div>
       <button class="btn-newtx" style="width:100%;justify-content:center" onclick="submitNewTransaction()">Save Transaction</button>
@@ -4064,6 +4074,12 @@ function openTxDetail(id, calledFrom=null){
     discountRow.style.display='none';
   }
 
+  // Service + PB1 are not stored separately — derive from billAmount, discount, finalAmount
+  const subtotal=t.billAmount-t.discountAmount;
+  const serviceCharge=Math.round(subtotal*0.05);
+  const pb1=Math.round(subtotal*0.10);
+  document.getElementById('txd-service').textContent=fmtRp(serviceCharge);
+  document.getElementById('txd-pb1').textContent=fmtRp(pb1);
   document.getElementById('txd-final').textContent=fmtRp(t.finalAmount);
 
   const notesRow=document.getElementById('txd-notes-row');
@@ -4574,10 +4590,17 @@ function updateTxPreview(){
     }
   }
   discount=Math.round(discount);
-  const final=Math.max(0,bill-discount);
+  const subtotal=Math.max(0,bill-discount);
+  const SERVICE_RATE=0.05;
+  const PB1_RATE=0.10;
+  const serviceCharge=Math.round(subtotal*SERVICE_RATE);
+  const pb1=Math.round(subtotal*PB1_RATE);
+  const final=subtotal+serviceCharge+pb1;
   document.getElementById('ntPreviewBill').textContent=fmtRp(bill);
   document.getElementById('ntPreviewDiscount').textContent='– '+fmtRp(discount);
   document.getElementById('ntPreviewDiscountRow').style.display=discount>0?'flex':'none';
+  document.getElementById('ntPreviewService').textContent='+ '+fmtRp(serviceCharge);
+  document.getElementById('ntPreviewPB1').textContent='+ '+fmtRp(pb1);
   document.getElementById('ntPreviewFinal').textContent=fmtRp(final);
 }
 

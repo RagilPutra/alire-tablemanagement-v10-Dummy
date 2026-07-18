@@ -914,7 +914,10 @@ app.post('/api/transactions', requireAuth, (req, res) => {
       resolvedPromoId2 = promo.id;
     }
 
-    const finalAmount = Math.max(0, bill - discountAmount);
+    const subtotal = Math.max(0, bill - discountAmount);
+    const serviceCharge = Math.round(subtotal * 0.05);
+    const pb1 = Math.round(subtotal * 0.10);
+    const finalAmount = subtotal + serviceCharge + pb1;
     const txnDate = date || new Date().toISOString().slice(0, 10);
 
     const stmt = db.prepare(`
