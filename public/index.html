@@ -2330,24 +2330,7 @@ function renderFloor(){const d=afd();Object.entries(FGRPS).forEach(([gid,ids])=>
 function renderExFloor(){const d=afd();Object.entries(EXGRPS).forEach(([gid,ids])=>{const c=document.getElementById(gid);if(!c)return;c.innerHTML='';ids.forEach(tid=>{const el=makeTbl(tid,d,true);if(el)c.appendChild(el);});});Object.entries(EXROWS).forEach(([rid,ids])=>{const c=document.getElementById(rid);if(!c)return;c.innerHTML='';ids.forEach(tid=>{const el=makeTbl(tid,d,true);if(el)c.appendChild(el);});});}
 
 /* ── TABLE INFO — today only ── */
-function openTI(tid){
-  activeTbl=tid;const t=getT(tid);
-  document.getElementById('ti-tit').textContent=lbl(tid);
-  document.getElementById('ti-sub').textContent=`${t.cap} pax · ${ZL[t.zone]}`;
-  // Show bookings for the currently-viewed floor date
-  const viewDate=afd();
-  const isToday=viewDate===today();
-  const dir=bookings.filter(b=>b.date===viewDate&&String(b.tableId)===String(tid));
-  const asc=bookings.filter(b=>b.date===viewDate&&String(b.tableId)!==String(tid)&&(b.combos||[]).map(String).includes(String(tid)));
-  const all=[...dir,...asc].sort((a,b)=>{
-    const aDone=a.endedAt?1:0,bDone=b.endedAt?1:0;
-    if(aDone!==bDone)return aDone-bDone; // active bookings before completed
-    return aDone?b.time.localeCompare(a.time):a.time.localeCompare(b.time); // active: soonest first · completed: newest first
-  });
-  const body=document.getElementById('ti-body');
-  if(!all.length){body.innerHTML=`<div class="no-res">No reservations for ${isToday?'today':fmtSh(viewDate)} at this table</div>`;}
-  else{
-    body.innerHTML=all.map(b=>{
+function tiCardHTML(b,tid){
       const isCM=String(b.tableId)!==String(tid);
       const isCombo=b.combos&&b.combos.length>0;  // Booking has combo tables
       const ex=[];
@@ -2368,7 +2351,42 @@ function openTI(tid){
       const bellSrcPanel=bellColor==='red'?'bell-red.png':bellColor==='yellow'?'bell-yellow.png':'';
       const timerBox=elapsed?`<div style="background:#f0f0f0;border:1px solid #ccc;border-radius:4px;padding:6px 8px;margin-top:8px;display:flex;align-items:center;gap:6px;width:fit-content"><div style="font-size:13px">🕐</div><div style="font-size:13px;font-weight:500;color:#1a1a1a">${b.time} - ${elapsed}</div>${showBell?`<img src="${bellSrcPanel}" style="width:14px;height:14px">`:''}</div>`:'';
       return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes.length>30?b.notes.substring(0,30)+'...':b.notes}</div>`:''}${timerBox}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>{const itemNote=i.itemNote?(i.itemNote.length>30?i.itemNote.substring(0,30)+'...':i.itemNote):'';return`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${itemNote?`<div class="podit-note">📝 ${itemNote}</div>`:''}</div>`}).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}${b.endedAt?`<span class="bdg" style="background:#e5e7eb;color:#374151">Completed</span>`:`<button class="ibtn iok" title="End session" onclick="showCF('done',${b.id})">✓</button>`}<button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div></div>`;
-    }).join('');}
+      return`<div class="rcard"${isCM||isCombo?' style="border-color:#EF9F27"':hpo?' style="border-color:#1a1a1a"':''}><div class="rcard-top"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${b.name||'Walk-in'}${isCM?` <span style="font-size:10px;opacity:.6">(via ${lbl(b.tableId)})</span>`:''}</div><div class="rcmeta">${b.time}${b.pax?' · '+b.pax+' pax':''}${b.duration?' · '+durLbl(b.duration):''}</div>${b.staff?`<div class="rcmeta">by ${b.staff}</div>`:''}${ex.length?`<div class="rcmeta">${ex.join(' · ')}</div>`:''}${b.notes?`<div class="rcmeta" style="font-style:italic">${b.notes.length>30?b.notes.substring(0,30)+'...':b.notes}</div>`:''}${timerBox}${hpo?`<div class="podisplay"><div class="podtit"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#1a1a1a" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/></svg>Pre Order (${b.preOrder.length} item${b.preOrder.length>1?'s':''})</div>${b.preOrder.map(i=>{const itemNote=i.itemNote?(i.itemNote.length>30?i.itemNote.substring(0,30)+'...':i.itemNote):'';return`<div class="podit"><div class="podit-row"><span>${i.name}</span><strong>×${i.qty}</strong></div>${itemNote?`<div class="podit-note">📝 ${itemNote}</div>`:''}</div>`}).join('')}${hn?`<div class="podnote">📝 ${b.poNote}</div>`:''}</div>`:''}</div><div class="rcard-r">${hpo?`<button class="btn-popdf" onclick="downloadPOPDF(${b.id})">📄 PO PDF</button>`:''}<span class="bdg ${b.type==='walkin'?'bw':'br'}">${b.type==='walkin'?'Walk-in':'Reserved'}</span>${hpo?`<span class="bdg bp">PO</span>`:''}${b.endedAt?`<span class="bdg" style="background:#e5e7eb;color:#374151">Completed</span>`:`<button class="ibtn iok" title="End session" onclick="showCF('done',${b.id})">✓</button>`}<button class="ibtn ied" onclick="startEdit(${b.id})">✎</button><button class="ibtn idl" onclick="showCF('delete',${b.id})">✕</button></div></div></div>`;
+}
+function openTI(tid){
+  activeTbl=tid;const t=getT(tid);
+  document.getElementById('ti-tit').textContent=lbl(tid);
+  document.getElementById('ti-sub').textContent=`${t.cap} pax · ${ZL[t.zone]}`;
+  // Show bookings for the currently-viewed floor date
+  const viewDate=afd();
+  const isToday=viewDate===today();
+  const dir=bookings.filter(b=>b.date===viewDate&&String(b.tableId)===String(tid));
+  const asc=bookings.filter(b=>b.date===viewDate&&String(b.tableId)!==String(tid)&&(b.combos||[]).map(String).includes(String(tid)));
+  const all=[...dir,...asc];
+  const body=document.getElementById('ti-body');
+  if(!all.length){body.innerHTML=`<div class="no-res">No reservations for ${isToday?'today':fmtSh(viewDate)} at this table</div>`;return openOv('ov-ti');}
+
+  // Split into Active (already started, not ended) · Upcoming (not started yet) · Completed (ended)
+  const nowMins=isToday?timeToMinutes(nowS()):null;
+  const notEnded=all.filter(b=>!b.endedAt);
+  const ended=all.filter(b=>b.endedAt);
+  let activeArr,upcomingArr;
+  if(isToday){
+    activeArr=notEnded.filter(b=>timeToMinutes(b.time)<=nowMins).sort((a,b)=>a.time.localeCompare(b.time));
+    upcomingArr=notEnded.filter(b=>timeToMinutes(b.time)>nowMins).sort((a,b)=>a.time.localeCompare(b.time));
+  }else if(viewDate>today()){
+    // Future date: nothing has started yet
+    activeArr=[];
+    upcomingArr=notEnded.sort((a,b)=>a.time.localeCompare(b.time));
+  }else{
+    // Past date: anything not ended is treated as active (should've been ended already)
+    activeArr=notEnded.sort((a,b)=>a.time.localeCompare(b.time));
+    upcomingArr=[];
+  }
+  const completedArr=ended.sort((a,b)=>b.time.localeCompare(a.time)); // newest first
+
+  const section=(label,arr)=>arr.length?`<div class="secdiv">${label}</div>${arr.map(b=>tiCardHTML(b,tid)).join('')}`:'';
+  body.innerHTML=section('Active',activeArr)+section('Upcoming',upcomingArr)+section('Completed',completedArr);
   openOv('ov-ti');
 }
 function openResFromTbl(){closeOv('ov-ti');openReservation(activeTbl);}
