@@ -2339,7 +2339,11 @@ function openTI(tid){
   const isToday=viewDate===today();
   const dir=bookings.filter(b=>b.date===viewDate&&String(b.tableId)===String(tid));
   const asc=bookings.filter(b=>b.date===viewDate&&String(b.tableId)!==String(tid)&&(b.combos||[]).map(String).includes(String(tid)));
-  const all=[...dir,...asc].sort((a,b)=>a.time.localeCompare(b.time));
+  const all=[...dir,...asc].sort((a,b)=>{
+    const aDone=a.endedAt?1:0,bDone=b.endedAt?1:0;
+    if(aDone!==bDone)return aDone-bDone; // active bookings before completed
+    return aDone?b.time.localeCompare(a.time):a.time.localeCompare(b.time); // active: soonest first · completed: newest first
+  });
   const body=document.getElementById('ti-body');
   if(!all.length){body.innerHTML=`<div class="no-res">No reservations for ${isToday?'today':fmtSh(viewDate)} at this table</div>`;}
   else{
