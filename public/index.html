@@ -4716,6 +4716,16 @@ function aUpdateCards(s){
   else{document.getElementById('s-top').textContent='—';document.getElementById('s-top-sub').textContent='No data';}
 }
 function aHeatLevel(c,m){if(c===0)return 0;if(c<m)return 1;if(c<m*2)return 2;return 3;}
+function aIsSingleDay(range,from,to){
+  if(range==='today')return true;
+  if(range==='custom'&&from&&to&&from===to)return true;
+  return false;
+}
+function aCustomSpanDays(from,to){
+  if(!from||!to)return 15;
+  const d=Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
+  return d>0?d:15;
+}
 function aRenderHeatMap(tc,m){
   const groups={};A_TBLS.forEach(t=>{if(!groups[t.group])groups[t.group]=[];groups[t.group].push(t);});
   Object.entries(groups).forEach(([g,tbls])=>{
@@ -4739,7 +4749,7 @@ function aUpdateHeatLegend(range){
   let m=1,lb='Today';
   if(range==='7days'){m=7;lb='Last 7 Days';}
   else if(range==='30days'){m=30;lb='Last 30 Days';}
-  else if(range==='custom'){m=15;lb='Custom Range';}
+  else if(range==='custom'){m=aCustomSpanDays(aLastCustomFrom,aLastCustomTo);lb='Custom Range';}
   document.getElementById('hl-1').textContent=m;document.getElementById('hl-2').textContent=m*2;document.getElementById('hl-3').textContent=`${m*3}+`;
   document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
   return m;
@@ -4766,7 +4776,7 @@ function aBuildOverTime(bks,range){
   if(aCharts.ot){aCharts.ot.destroy();}
   const hrs=['08','09','10','11','12','13','14','15','16','17','18','19','20','21','22'];
   let labels,datasets;
-  if(range!=='today'){
+  if(!aIsSingleDay(range,aLastCustomFrom,aLastCustomTo)){
     const dm={};bks.forEach(b=>{if(b.date){dm[b.date]=dm[b.date]||{r:0,w:0};b.type==='walkin'?dm[b.date].w++:dm[b.date].r++;}});
     const sd=Object.keys(dm).sort();
     labels=sd.map(d=>aFmtDate(d));
@@ -4888,7 +4898,7 @@ function aPdfChartConfig(type,bks,range,from,to){
   if(type==='overTime'){
     const hrs=['08','09','10','11','12','13','14','15','16','17','18','19','20','21','22'];
     let labels,resData,wlkData;
-    if(range==='today'){
+    if(aIsSingleDay(range,from,to)){
       labels=hrs.map(h=>h+':00');
       resData=hrs.map(h=>bks.filter(b=>b.type!=='walkin'&&b.time&&b.time.startsWith(h+':')).length);
       wlkData=hrs.map(h=>bks.filter(b=>b.type==='walkin'&&b.time&&b.time.startsWith(h+':')).length);
@@ -5157,7 +5167,7 @@ async function exportPDF(){
   let hmScale=1;
   if(aLastRange==='7days')hmScale=7;
   else if(aLastRange==='30days')hmScale=30;
-  else if(aLastRange==='custom')hmScale=15;
+  else if(aLastRange==='custom')hmScale=aCustomSpanDays(rangeFrom,rangeTo);
   const hmRangeLabel={today:'Today','7days':'Last 7 Days','30days':'Last 30 Days','custom':'Custom Range'};
 
   // Heat level → fill color (matching live view's 4 levels)
