@@ -70,6 +70,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
 .vtab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 .msubtab{font-size:15px;font-weight:600;padding:8px 4px;margin-right:24px;cursor:pointer;border:none;background:none;color:var(--tx2);border-bottom:2px solid transparent}
 .bday-row{background:var(--bg2);margin-top:-3px}.bday-row:first-child{margin-top:0}.bday-row:hover{background:var(--bg3)}
+.btn-seecal{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:0.5px solid var(--bd2);background:var(--bg2);color:var(--tx2);cursor:pointer;font-family:var(--font)}
+.btn-seecal:hover{background:var(--bg3);color:var(--tx)}
+.bc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.bc-wd{text-align:center;font-size:11px;font-weight:700;color:var(--tx2)}
+.bc-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;color:var(--tx)}
+.bc-dim{color:var(--tx3);opacity:.4}
+.bc-today{background:var(--bg3);font-weight:700}
+.bc-hasbday{background:rgba(197,162,93,.18);color:var(--brand2);font-weight:700;position:relative}
+.bc-hasbday.bc-today{background:linear-gradient(135deg,rgba(197,162,93,.3),var(--bg3))}
+.bc-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer}
+.bc-row:hover{background:var(--bg3)}
 .msubtab:hover{color:var(--tx)}
 .msubtab.active{color:var(--tx);border-bottom-color:var(--brand)}
 /* ANALYTICS */
@@ -729,7 +740,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
         <div class="sum-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div style="font-weight:700;font-size:13px">Upcoming Birthdays <span id="bday-count" style="font-size:11px;font-weight:400;color:var(--tx2)"></span></div>
-            <span style="font-size:11px;color:var(--tx2)">next 30 days</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--tx2)">next 30 days</span>
+              <button class="btn-seecal" onclick="openBdayCalendar()">See Calendar</button>
+            </div>
           </div>
           <div id="bday-list" style="display:flex;flex-direction:column;gap:0;min-height:80px"></div>
           <div id="bday-pagination" style="display:none;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:0.5px solid var(--bd3)">
@@ -1022,6 +1036,38 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx)}
           <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:9px;background:#FCEBEB;color:#791F1F;border:0.5px solid #E24B4A;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" onclick="removeMemberFromDetail()">✕ Remove Membership</button>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- BIRTHDAY CALENDAR MODAL -->
+  <div class="ov hidden" id="ov-bdaycal">
+    <div class="modal" style="max-width:720px">
+      <div class="mhdr"><div class="mtit">Birthday Calendar</div><button class="mcls" onclick="closeOv('ov-bdaycal')">✕</button></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span onclick="bdayCalYearJump(-1)" id="bc-prev-year" style="cursor:pointer;color:var(--tx3);font-size:13px;font-weight:600"></span>
+            <div style="display:flex;align-items:center;gap:16px">
+              <button onclick="bdayCalNav(-1)" style="background:none;border:none;color:var(--tx2);font-size:16px;cursor:pointer;padding:2px 8px;font-family:var(--font)">‹</button>
+              <div id="bc-month-label" style="font-size:16px;font-weight:700;min-width:130px;text-align:center"></div>
+              <button onclick="bdayCalNav(1)" style="background:none;border:none;color:var(--tx2);font-size:16px;cursor:pointer;padding:2px 8px;font-family:var(--font)">›</button>
+            </div>
+            <span onclick="bdayCalYearJump(1)" id="bc-next-year" style="cursor:pointer;color:var(--tx3);font-size:13px;font-weight:600"></span>
+          </div>
+          <div class="bc-grid" style="margin-bottom:6px">
+            <div class="bc-wd">Mon</div><div class="bc-wd">Tue</div><div class="bc-wd">Wed</div><div class="bc-wd">Thu</div><div class="bc-wd">Fri</div><div class="bc-wd">Sat</div><div class="bc-wd">Sun</div>
+          </div>
+          <div class="bc-grid" id="bc-grid"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button onclick="bdayCalGoToday()" style="padding:6px 16px;border-radius:8px;border:none;background:var(--brand);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Today</button>
+          </div>
+        </div>
+        <div style="flex:1;min-width:240px;max-width:280px;background:var(--bg2);border-radius:12px;padding:16px;display:flex;flex-direction:column">
+          <div style="font-size:13px;font-weight:700;margin-bottom:2px" id="bc-panel-title">Birthdays</div>
+          <div id="bc-count" style="font-size:11px;color:var(--tx2);margin-bottom:12px"></div>
+          <div id="bc-list" style="display:flex;flex-direction:column;gap:2px;overflow-y:auto;max-height:340px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -3462,6 +3508,97 @@ function bdayPage(dir){
   renderUpcomingBirthdays();
 }
 
+// ── Birthday Calendar popup ──
+let bdayCalYear=null,bdayCalMonth=null; // month is 0-indexed
+function openBdayCalendar(){
+  const now=new Date();
+  bdayCalYear=now.getFullYear();
+  bdayCalMonth=now.getMonth();
+  renderBdayCalendar();
+  openOv('ov-bdaycal');
+}
+function bdayCalNav(dir){
+  bdayCalMonth+=dir;
+  if(bdayCalMonth<0){bdayCalMonth=11;bdayCalYear--;}
+  else if(bdayCalMonth>11){bdayCalMonth=0;bdayCalYear++;}
+  renderBdayCalendar();
+}
+function bdayCalYearJump(dir){
+  bdayCalYear+=dir;
+  renderBdayCalendar();
+}
+function bdayCalGoToday(){
+  const now=new Date();
+  bdayCalYear=now.getFullYear();
+  bdayCalMonth=now.getMonth();
+  renderBdayCalendar();
+}
+// All members whose birthday falls in the given month (any birth year), sorted by day
+function bdayCalMembersForMonth(month0){
+  const list=[];
+  members.forEach(m=>{
+    if(!m.birthday)return;
+    const[y,mo,d]=m.birthday.split('-').map(Number);
+    if(mo-1===month0){
+      const stats=memberStatsFor(m.phone,'2000-01-01',aTodayStr(),m.name);
+      list.push({id:m.id,name:stats.name,phone:m.phone,day:d,month:mo,year:y,tier:stats.tier});
+    }
+  });
+  list.sort((a,b)=>a.day-b.day);
+  return list;
+}
+function renderBdayCalendar(){
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const year=bdayCalYear,month=bdayCalMonth;
+  const monthMembers=bdayCalMembersForMonth(month);
+  const bdayDays={};monthMembers.forEach(b=>{(bdayDays[b.day]=bdayDays[b.day]||[]).push(b);});
+
+  document.getElementById('bc-month-label').textContent=`${monthNames[month]} ${year}`;
+  document.getElementById('bc-prev-year').textContent=year-1;
+  document.getElementById('bc-next-year').textContent=year+1;
+  document.getElementById('bc-panel-title').textContent=`Birthdays in ${monthNames[month]}`;
+
+  const firstOfMonth=new Date(year,month,1);
+  const startWeekday=(firstOfMonth.getDay()+6)%7; // 0=Mon..6=Sun
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const daysInPrevMonth=new Date(year,month,0).getDate();
+  const now=new Date();
+  const isCurrentMonth=(now.getFullYear()===year&&now.getMonth()===month);
+  const todayDate=now.getDate();
+
+  let cells=[];
+  for(let i=startWeekday-1;i>=0;i--)cells.push({day:daysInPrevMonth-i,dim:true});
+  for(let d=1;d<=daysInMonth;d++)cells.push({day:d,dim:false,hasB:!!bdayDays[d],isToday:isCurrentMonth&&d===todayDate});
+  let trailing=1;
+  while(cells.length%7!==0)cells.push({day:trailing++,dim:true});
+
+  document.getElementById('bc-grid').innerHTML=cells.map(c=>{
+    if(c.dim)return `<div class="bc-cell bc-dim">${c.day}</div>`;
+    let cls='bc-cell';
+    if(c.isToday)cls+=' bc-today';
+    if(c.hasB)cls+=' bc-hasbday';
+    const title=c.hasB?bdayDays[c.day].map(b=>b.name).join(', '):'';
+    return `<div class="${cls}" title="${escapeHtml(title)}">${c.day}</div>`;
+  }).join('');
+
+  const listEl=document.getElementById('bc-list');
+  document.getElementById('bc-count').textContent=monthMembers.length?`(${monthMembers.length})`:'';
+  if(!monthMembers.length){
+    listEl.innerHTML='<div style="font-size:12px;color:var(--tx2);text-align:center;padding:20px 0">No birthdays this month</div>';
+    return;
+  }
+  listEl.innerHTML=monthMembers.map(b=>{
+    const tierCircle=b.tier?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${b.tier.color};margin-left:4px;flex-shrink:0"></span>`:'';
+    return `<div onclick="closeOv('ov-bdaycal');openMemberDetail(${b.id})" class="bc-row">
+      <div style="font-weight:700;font-size:12px;color:var(--brand2);flex-shrink:0;width:22px">${String(b.day).padStart(2,'0')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:13px;font-weight:600">${escapeHtml(b.name)}</span>${tierCircle}</div>
+        <div style="font-size:11px;color:var(--tx2)">${escapeHtml(b.phone)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function selectMemberTime(btn,range){
   btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -4254,18 +4391,39 @@ function renderTransactions(){
 }
 
 let promoUsageCache=[];
+// Recalculates a single promo's discount contribution using its current rules (same formula as server)
+function calcPromoDiscountClient(promo,bill){
+  if(!promo||!promo.discountPct)return 0;
+  let disc=bill*(promo.discountPct/100);
+  if(promo.maxDiscount>0&&disc>promo.maxDiscount)disc=promo.maxDiscount;
+  return Math.round(disc);
+}
 function renderPromoUsage(rows){
   const usageEl=document.getElementById('promo-usage-tbody');
   if(!usageEl)return;
 
-  // Group by promo code
+  // Group by promo code — a transaction can use two combined promos (promoCode + promoCode2,
+  // e.g. a birthday promo stacked on top of a visit promo). Both must be counted in their own
+  // row, not just promoCode. The transaction only stores one combined discountAmount, so for
+  // combined transactions we split it: promo 1's share is recalculated from its own rule
+  // (clamped so it never exceeds the real total), and promo 2 takes the remainder — this way
+  // each row's discount total still sums exactly to what was actually charged historically.
   const map={};
-  rows.forEach(t=>{
-    const key=t.promoCode||'__none__';
-    if(!map[key])map[key]={code:t.promoCode||null,name:null,count:0,discount:0,revenue:0};
+  function addUsage(code,discount,t){
+    const key=code||'__none__';
+    if(!map[key])map[key]={code:code||null,name:null,count:0,discount:0,revenue:0};
     map[key].count++;
-    map[key].discount+=t.discountAmount||0;
+    map[key].discount+=discount;
     map[key].revenue+=t.finalAmount||0;
+  }
+  rows.forEach(t=>{
+    if(!t.promoCode&&!t.promoCode2){addUsage(null,0,t);return;}
+    if(t.promoCode&&!t.promoCode2){addUsage(t.promoCode,t.discountAmount||0,t);return;}
+    const p1=promotions.find(p=>p.code===t.promoCode);
+    const p1Disc=Math.min(calcPromoDiscountClient(p1,t.billAmount||0),t.discountAmount||0);
+    const p2Disc=Math.max((t.discountAmount||0)-p1Disc,0);
+    addUsage(t.promoCode,p1Disc,t);
+    addUsage(t.promoCode2,p2Disc,t);
   });
 
   // Enrich with promo name from promotions list (match by code)
@@ -4750,7 +4908,7 @@ function aUpdateHeatLegend(range){
   if(range==='7days'){m=7;lb='Last 7 Days';}
   else if(range==='30days'){m=30;lb='Last 30 Days';}
   else if(range==='custom'){m=aCustomSpanDays(aLastCustomFrom,aLastCustomTo);lb='Custom Range';}
-  document.getElementById('hl-1').textContent=m;document.getElementById('hl-2').textContent=m*2;document.getElementById('hl-3').textContent=`${m*3}+`;
+  document.getElementById('hl-1').textContent=m;document.getElementById('hl-2').textContent=m*2;document.getElementById('hl-3').textContent=`${m*2}+`;
   document.getElementById('hl-note').textContent=`(Scale adjusts based on selected time range: ${lb})`;
   return m;
 }
