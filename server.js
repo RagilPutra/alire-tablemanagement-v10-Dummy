@@ -914,10 +914,11 @@ app.post('/api/transactions', requireAuth, (req, res) => {
       resolvedPromoId2 = promo.id;
     }
 
-    const subtotal = Math.max(0, bill - discountAmount);
-    const serviceCharge = Math.round(subtotal * 0.05);
-    const pb1 = Math.round(subtotal * 0.10);
-    const finalAmount = subtotal + serviceCharge + pb1;
+    const afterDiscount = Math.max(0, bill - discountAmount);
+    const serviceCharge = Math.round(afterDiscount * 0.05);
+    const subtotal = afterDiscount + serviceCharge; // sub total = bill (after discount) + service charge
+    const pb1 = Math.round(subtotal * 0.10); // PB1 now calculated on the sub total, not the raw bill
+    const finalAmount = subtotal + pb1;
     const txnDate = date || new Date().toISOString().slice(0, 10);
 
     const stmt = db.prepare(`

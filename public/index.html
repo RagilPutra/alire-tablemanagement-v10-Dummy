@@ -4233,10 +4233,16 @@ function openTxDetail(id, calledFrom=null){
     discountRow.style.display='none';
   }
 
-  // Service + PB1 are not stored separately — derive from billAmount, discount, finalAmount
-  const subtotal=t.billAmount-t.discountAmount;
-  const serviceCharge=Math.round(subtotal*0.05);
-  const pb1=Math.round(subtotal*0.10);
+  // Service + PB1 are not stored separately — derive from billAmount/discount/finalAmount.
+  // Two formulas have existed (PB1 on bill vs PB1 on bill+service charge); reconstruct both
+  // and use whichever one actually reproduces this transaction's real stored finalAmount,
+  // so older transactions keep showing their true original breakdown.
+  const afterDiscount=t.billAmount-t.discountAmount;
+  const scA=Math.round(afterDiscount*0.05),pb1A=Math.round(afterDiscount*0.10),finalA=afterDiscount+scA+pb1A;
+  const scB=Math.round(afterDiscount*0.05),subB=afterDiscount+scB,pb1B=Math.round(subB*0.10),finalB=subB+pb1B;
+  let serviceCharge,pb1;
+  if(Math.round(t.finalAmount)===finalB){serviceCharge=scB;pb1=pb1B;}
+  else{serviceCharge=scA;pb1=pb1A;}
   document.getElementById('txd-service').textContent=fmtRp(serviceCharge);
   document.getElementById('txd-pb1').textContent=fmtRp(pb1);
   document.getElementById('txd-final').textContent=fmtRp(t.finalAmount);
@@ -4770,12 +4776,13 @@ function updateTxPreview(){
     }
   }
   discount=Math.round(discount);
-  const subtotal=Math.max(0,bill-discount);
+  const afterDiscount=Math.max(0,bill-discount);
   const SERVICE_RATE=0.05;
   const PB1_RATE=0.10;
-  const serviceCharge=Math.round(subtotal*SERVICE_RATE);
-  const pb1=Math.round(subtotal*PB1_RATE);
-  const final=subtotal+serviceCharge+pb1;
+  const serviceCharge=Math.round(afterDiscount*SERVICE_RATE);
+  const subtotal=afterDiscount+serviceCharge; // sub total = bill (after discount) + service charge
+  const pb1=Math.round(subtotal*PB1_RATE); // PB1 now calculated on the sub total
+  const final=subtotal+pb1;
   document.getElementById('ntPreviewBill').textContent=fmtRp(bill);
   document.getElementById('ntPreviewDiscount').textContent='– '+fmtRp(discount);
   document.getElementById('ntPreviewDiscountRow').style.display=discount>0?'flex':'none';
